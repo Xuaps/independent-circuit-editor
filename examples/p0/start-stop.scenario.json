@@ -1,0 +1,190 @@
+{
+  "format": "circuit-scenario",
+  "formatVersion": 1,
+  "target": {
+    "projectId": "project_selfhold",
+    "revision": 1,
+    "modelSet": {
+      "id": "core.dc",
+      "version": 1
+    }
+  },
+  "untilMs": 50,
+  "limits": {
+    "maxEvents": 1000,
+    "maxDeltaCycles": 128,
+    "maxTraceEntries": 1000
+  },
+  "inputs": [
+    {
+      "atMs": 10,
+      "sequence": 1,
+      "actions": [
+        {
+          "instanceId": "instance_start",
+          "action": "press",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "atMs": 20,
+      "sequence": 2,
+      "actions": [
+        {
+          "instanceId": "instance_start",
+          "action": "release",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "atMs": 30,
+      "sequence": 3,
+      "actions": [
+        {
+          "instanceId": "instance_stop",
+          "action": "press",
+          "payload": {}
+        }
+      ]
+    },
+    {
+      "atMs": 40,
+      "sequence": 4,
+      "actions": [
+        {
+          "instanceId": "instance_stop",
+          "action": "release",
+          "payload": {}
+        }
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "atMs": 0,
+      "target": {
+        "kind": "device",
+        "id": "device_relay"
+      },
+      "observable": "energized"
+    }
+  ],
+  "expect": {
+    "outcome": {
+      "stage": "run",
+      "status": "completed"
+    },
+    "observations": [
+      {
+        "atMs": 0,
+        "target": {
+          "kind": "device",
+          "id": "device_relay"
+        },
+        "observable": "energized",
+        "expected": {
+          "quality": "known",
+          "value": false
+        }
+      },
+      {
+        "atMs": 10,
+        "target": {
+          "kind": "device",
+          "id": "device_relay"
+        },
+        "observable": "energized",
+        "expected": {
+          "quality": "known",
+          "value": true
+        }
+      },
+      {
+        "atMs": 10,
+        "target": {
+          "kind": "instance",
+          "id": "instance_lamp"
+        },
+        "observable": "lit",
+        "expected": {
+          "quality": "known",
+          "value": true
+        }
+      },
+      {
+        "atMs": 20,
+        "target": {
+          "kind": "device",
+          "id": "device_relay"
+        },
+        "observable": "energized",
+        "expected": {
+          "quality": "known",
+          "value": true
+        }
+      },
+      {
+        "atMs": 20,
+        "target": {
+          "kind": "instance",
+          "id": "instance_lamp"
+        },
+        "observable": "lit",
+        "expected": {
+          "quality": "known",
+          "value": true
+        }
+      },
+      {
+        "atMs": 30,
+        "target": {
+          "kind": "device",
+          "id": "device_relay"
+        },
+        "observable": "energized",
+        "expected": {
+          "quality": "known",
+          "value": false
+        }
+      },
+      {
+        "atMs": 30,
+        "target": {
+          "kind": "instance",
+          "id": "instance_lamp"
+        },
+        "observable": "lit",
+        "expected": {
+          "quality": "known",
+          "value": false
+        }
+      },
+      {
+        "atMs": 40,
+        "target": {
+          "kind": "device",
+          "id": "device_relay"
+        },
+        "observable": "energized",
+        "expected": {
+          "quality": "known",
+          "value": false
+        }
+      },
+      {
+        "atMs": 40,
+        "target": {
+          "kind": "instance",
+          "id": "instance_lamp"
+        },
+        "observable": "lit",
+        "expected": {
+          "quality": "known",
+          "value": false
+        }
+      }
+    ]
+  }
+}

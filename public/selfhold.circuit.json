@@ -1,0 +1,477 @@
+{
+  "devices": [
+    {
+      "id": "device_lamp",
+      "initial": {},
+      "kind": "lamp",
+      "name": "H1",
+      "parameters": {
+        "color": "amber"
+      }
+    },
+    {
+      "id": "device_relay",
+      "initial": {},
+      "kind": "relay",
+      "name": "K1",
+      "parameters": {}
+    },
+    {
+      "id": "device_start",
+      "initial": {},
+      "kind": "pushButton",
+      "name": "S1",
+      "parameters": {}
+    },
+    {
+      "id": "device_stop",
+      "initial": {},
+      "kind": "pushButton",
+      "name": "S0",
+      "parameters": {}
+    },
+    {
+      "id": "device_supply",
+      "initial": {},
+      "kind": "dcSupply",
+      "name": "G1",
+      "parameters": {
+        "nominalVoltageV": 24
+      }
+    }
+  ],
+  "format": "circuit-project",
+  "formatVersion": 1,
+  "modelSet": {
+    "id": "core.dc",
+    "version": 1
+  },
+  "projectId": "project_selfhold",
+  "revision": 1,
+  "sheets": [
+    {
+      "annotations": [],
+      "id": "sheet_control",
+      "instances": [
+        {
+          "definition": {
+            "id": "core.relay.coil",
+            "version": 1
+          },
+          "deviceId": "device_relay",
+          "id": "instance_coil",
+          "label": "Main relay",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 650,
+              "y": 100
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.relay.contact.no",
+            "version": 1
+          },
+          "deviceId": "device_relay",
+          "id": "instance_hold",
+          "label": "Self-hold",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 440,
+              "y": 200
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.lamp",
+            "version": 1
+          },
+          "deviceId": "device_lamp",
+          "id": "instance_lamp",
+          "label": "Pilot lamp",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 650,
+              "y": 300
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.relay.contact.no",
+            "version": 1
+          },
+          "deviceId": "device_relay",
+          "id": "instance_pilot",
+          "label": "Pilot contact",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 440,
+              "y": 300
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.pushbutton.no",
+            "version": 1
+          },
+          "deviceId": "device_start",
+          "id": "instance_start",
+          "label": "Start",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 440,
+              "y": 100
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.pushbutton.nc",
+            "version": 1
+          },
+          "deviceId": "device_stop",
+          "id": "instance_stop",
+          "label": "Stop",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 300,
+              "y": 100
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        },
+        {
+          "definition": {
+            "id": "core.dc.supply",
+            "version": 1
+          },
+          "deviceId": "device_supply",
+          "id": "instance_supply",
+          "label": "Control supply",
+          "markings": {
+            "showDeviceName": true,
+            "showLabel": true,
+            "showTerminals": true,
+            "terminalLabels": {}
+          },
+          "parameters": {},
+          "transform": {
+            "mirrorX": false,
+            "position": {
+              "x": 100,
+              "y": 200
+            },
+            "rotation": 0
+          },
+          "variant": "default"
+        }
+      ],
+      "junctions": [
+        {
+          "id": "junction_after_start",
+          "position": {
+            "x": 520,
+            "y": 100
+          }
+        },
+        {
+          "id": "junction_before_start",
+          "position": {
+            "x": 360,
+            "y": 100
+          }
+        },
+        {
+          "id": "junction_positive",
+          "position": {
+            "x": 200,
+            "y": 100
+          }
+        },
+        {
+          "id": "junction_return",
+          "position": {
+            "x": 800,
+            "y": 300
+          }
+        }
+      ],
+      "name": "Sheet 1",
+      "page": {
+        "height": 800,
+        "unit": "du",
+        "width": 1000
+      },
+      "wires": [
+        {
+          "from": {
+            "instanceId": "instance_coil",
+            "kind": "port",
+            "portId": "a2"
+          },
+          "id": "wire_coil_return",
+          "to": {
+            "junctionId": "junction_return",
+            "kind": "junction"
+          },
+          "waypoints": [
+            {
+              "x": 800,
+              "y": 100
+            }
+          ]
+        },
+        {
+          "from": {
+            "instanceId": "instance_hold",
+            "kind": "port",
+            "portId": "p2"
+          },
+          "id": "wire_hold_output",
+          "to": {
+            "junctionId": "junction_after_start",
+            "kind": "junction"
+          },
+          "waypoints": [
+            {
+              "x": 520,
+              "y": 200
+            }
+          ]
+        },
+        {
+          "from": {
+            "instanceId": "instance_lamp",
+            "kind": "port",
+            "portId": "p2"
+          },
+          "id": "wire_lamp_return",
+          "to": {
+            "junctionId": "junction_return",
+            "kind": "junction"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "instanceId": "instance_pilot",
+            "kind": "port",
+            "portId": "p2"
+          },
+          "id": "wire_pilot_output",
+          "to": {
+            "instanceId": "instance_lamp",
+            "kind": "port",
+            "portId": "p1"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "instanceId": "instance_start",
+            "kind": "port",
+            "portId": "p2"
+          },
+          "id": "wire_start_output",
+          "to": {
+            "junctionId": "junction_after_start",
+            "kind": "junction"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "instanceId": "instance_stop",
+            "kind": "port",
+            "portId": "p2"
+          },
+          "id": "wire_stop_output",
+          "to": {
+            "junctionId": "junction_before_start",
+            "kind": "junction"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "instanceId": "instance_supply",
+            "kind": "port",
+            "portId": "plus"
+          },
+          "id": "wire_supply_positive",
+          "to": {
+            "junctionId": "junction_positive",
+            "kind": "junction"
+          },
+          "waypoints": [
+            {
+              "x": 100,
+              "y": 100
+            }
+          ]
+        },
+        {
+          "from": {
+            "instanceId": "instance_supply",
+            "kind": "port",
+            "portId": "minus"
+          },
+          "id": "wire_supply_return",
+          "to": {
+            "junctionId": "junction_return",
+            "kind": "junction"
+          },
+          "waypoints": [
+            {
+              "x": 100,
+              "y": 400
+            },
+            {
+              "x": 800,
+              "y": 400
+            }
+          ]
+        },
+        {
+          "from": {
+            "junctionId": "junction_after_start",
+            "kind": "junction"
+          },
+          "id": "wire_to_coil",
+          "to": {
+            "instanceId": "instance_coil",
+            "kind": "port",
+            "portId": "a1"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "junctionId": "junction_before_start",
+            "kind": "junction"
+          },
+          "id": "wire_to_hold",
+          "to": {
+            "instanceId": "instance_hold",
+            "kind": "port",
+            "portId": "p1"
+          },
+          "waypoints": [
+            {
+              "x": 360,
+              "y": 200
+            }
+          ]
+        },
+        {
+          "from": {
+            "junctionId": "junction_positive",
+            "kind": "junction"
+          },
+          "id": "wire_to_pilot",
+          "to": {
+            "instanceId": "instance_pilot",
+            "kind": "port",
+            "portId": "p1"
+          },
+          "waypoints": [
+            {
+              "x": 200,
+              "y": 300
+            }
+          ]
+        },
+        {
+          "from": {
+            "junctionId": "junction_before_start",
+            "kind": "junction"
+          },
+          "id": "wire_to_start",
+          "to": {
+            "instanceId": "instance_start",
+            "kind": "port",
+            "portId": "p1"
+          },
+          "waypoints": []
+        },
+        {
+          "from": {
+            "junctionId": "junction_positive",
+            "kind": "junction"
+          },
+          "id": "wire_to_stop",
+          "to": {
+            "instanceId": "instance_stop",
+            "kind": "port",
+            "portId": "p1"
+          },
+          "waypoints": []
+        }
+      ]
+    }
+  ],
+  "title": "Relay self-hold"
+}

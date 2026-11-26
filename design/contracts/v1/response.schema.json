@@ -1,0 +1,815 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:circuit-editor:schema:response:1",
+  "$defs": {
+    "runResult": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/projectIdentity"
+        },
+        "validationOutcome": {
+          "enum": [
+            "accepted",
+            "rejected"
+          ]
+        },
+        "runOutcome": {
+          "enum": [
+            "notStarted",
+            "completed",
+            "faulted",
+            "interrupted",
+            "resourceLimited"
+          ]
+        },
+        "untilMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400000
+        },
+        "finalTimeMs": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 86400000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "trace": {
+          "type": "object",
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            },
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "atMs": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 86400000
+                  },
+                  "observations": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "urn:circuit-editor:schema:common:1#/$defs/observation"
+                    },
+                    "minItems": 0,
+                    "maxItems": 10000
+                  }
+                },
+                "required": [
+                  "atMs",
+                  "observations"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 0,
+              "maxItems": 100000
+            }
+          },
+          "required": [
+            "complete",
+            "entries"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "project",
+        "validationOutcome",
+        "runOutcome",
+        "untilMs",
+        "finalTimeMs",
+        "trace"
+      ],
+      "additionalProperties": false
+    },
+    "library.list": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "$ref": "urn:circuit-editor:schema:profile:1"
+        }
+      },
+      "required": [
+        "profile"
+      ],
+      "additionalProperties": false
+    },
+    "library.describe": {
+      "type": "object",
+      "properties": {
+        "modelSet": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "core.dc"
+            },
+            "version": {
+              "const": 1
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "definition": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^core\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$",
+              "maxLength": 96
+            },
+            "version": {
+              "const": 1
+            },
+            "deviceKind": {
+              "enum": [
+                "dcSupply",
+                "pushButton",
+                "relay",
+                "lamp"
+              ]
+            },
+            "role": {
+              "enum": [
+                "controller",
+                "observer"
+              ]
+            },
+            "domain": {
+              "const": "electrical.dc"
+            },
+            "ports": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                  },
+                  "role": {
+                    "enum": [
+                      "positive",
+                      "return",
+                      "load",
+                      "switched"
+                    ]
+                  },
+                  "anchor": {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "integer",
+                        "minimum": -1000000,
+                        "maximum": 1000000
+                      },
+                      "y": {
+                        "type": "integer",
+                        "minimum": -1000000,
+                        "maximum": 1000000
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "defaultMarking": {
+                    "type": "string",
+                    "maxLength": 32
+                  }
+                },
+                "required": [
+                  "id",
+                  "role",
+                  "anchor",
+                  "defaultMarking"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 32
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "press",
+                  "release"
+                ]
+              },
+              "minItems": 0,
+              "maxItems": 2
+            },
+            "observables": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "maxProperties": 32,
+              "additionalProperties": {
+                "enum": [
+                  "boolean"
+                ]
+              }
+            }
+          },
+          "required": [
+            "id",
+            "version",
+            "deviceKind",
+            "role",
+            "domain",
+            "ports",
+            "actions",
+            "observables"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "modelSet",
+        "definition"
+      ],
+      "additionalProperties": false
+    },
+    "new": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/projectIdentity"
+        },
+        "outputPath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "project",
+        "outputPath"
+      ],
+      "additionalProperties": false
+    },
+    "inspect": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "urn:circuit-editor:schema:project:1"
+        }
+      },
+      "required": [
+        "project"
+      ],
+      "additionalProperties": false
+    },
+    "validate": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/projectIdentity"
+        },
+        "scope": {
+          "enum": [
+            "document",
+            "run"
+          ]
+        },
+        "valid": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "project",
+        "scope",
+        "valid"
+      ],
+      "additionalProperties": false
+    },
+    "edit.apply": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/projectIdentity"
+        },
+        "beforeRevision": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/revision"
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "operationCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operationIndex": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9999
+              },
+              "op": {
+                "enum": [
+                  "device.create",
+                  "device.rename",
+                  "device.parameters.replace",
+                  "device.remove",
+                  "instance.place",
+                  "instance.bind",
+                  "instance.transform",
+                  "instance.presentation.replace",
+                  "instance.remove",
+                  "junction.create",
+                  "junction.remove",
+                  "wire.add",
+                  "wire.replace",
+                  "wire.remove",
+                  "annotation.add",
+                  "annotation.remove",
+                  "page.replace"
+                ]
+              },
+              "targetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "operationIndex",
+              "op",
+              "targetId"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "outputPath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "project",
+        "beforeRevision",
+        "dryRun",
+        "operationCount",
+        "changes"
+      ],
+      "additionalProperties": false
+    },
+    "simulate": {
+      "$ref": "#/$defs/runResult"
+    },
+    "verify": {
+      "type": "object",
+      "properties": {
+        "observed": {
+          "$ref": "#/$defs/runResult"
+        },
+        "verificationOutcome": {
+          "enum": [
+            "passed",
+            "failed",
+            "incomplete"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "passed": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            },
+            "required": [
+              "id",
+              "passed",
+              "message"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 20001
+        },
+        "expectedOutcome": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "run"
+                },
+                "status": {
+                  "const": "completed"
+                }
+              },
+              "required": [
+                "stage",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "run"
+                },
+                "status": {
+                  "const": "faulted"
+                },
+                "code": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+                }
+              },
+              "required": [
+                "stage",
+                "status",
+                "code"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "validation"
+                },
+                "status": {
+                  "const": "rejected"
+                },
+                "code": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+                }
+              },
+              "required": [
+                "stage",
+                "status",
+                "code"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "observed",
+        "verificationOutcome",
+        "checks",
+        "expectedOutcome"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "const": 1
+    },
+    "command": {
+      "enum": [
+        "library.list",
+        "library.describe",
+        "new",
+        "inspect",
+        "validate",
+        "edit.apply",
+        "simulate",
+        "verify"
+      ]
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "exitCode": {
+      "enum": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        130
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:circuit-editor:schema:common:1#/$defs/diagnostic"
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "result": {}
+  },
+  "required": [
+    "apiVersion",
+    "command",
+    "ok",
+    "exitCode",
+    "diagnostics",
+    "result"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "library.list"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/library.list"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "library.describe"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/library.describe"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "new"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/new"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "inspect"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/inspect"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "validate"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/validate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "edit.apply"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/edit.apply"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "simulate"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/simulate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "verify"
+          }
+        },
+        "required": [
+          "command"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/verify"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": true
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exitCode": {
+            "const": 0
+          },
+          "result": {
+            "not": {
+              "type": "null"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "ok": {
+            "const": false
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "then": {
+        "properties": {
+          "exitCode": {
+            "not": {
+              "const": 0
+            }
+          },
+          "diagnostics": {
+            "contains": {
+              "properties": {
+                "severity": {
+                  "const": "error"
+                }
+              },
+              "required": [
+                "severity"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

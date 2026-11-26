@@ -1,0 +1,567 @@
+{
+  "format": "circuit-operations",
+  "formatVersion": 1,
+  "target": {
+    "projectId": "project_selfhold",
+    "expectedRevision": 0
+  },
+  "operations": [
+    {
+      "op": "device.create",
+      "device": {
+        "id": "device_supply",
+        "name": "G1",
+        "kind": "dcSupply",
+        "parameters": {
+          "nominalVoltageV": 24
+        },
+        "initial": {}
+      }
+    },
+    {
+      "op": "device.create",
+      "device": {
+        "id": "device_stop",
+        "name": "S0",
+        "kind": "pushButton",
+        "parameters": {},
+        "initial": {}
+      }
+    },
+    {
+      "op": "device.create",
+      "device": {
+        "id": "device_start",
+        "name": "S1",
+        "kind": "pushButton",
+        "parameters": {},
+        "initial": {}
+      }
+    },
+    {
+      "op": "device.create",
+      "device": {
+        "id": "device_relay",
+        "name": "K1",
+        "kind": "relay",
+        "parameters": {},
+        "initial": {}
+      }
+    },
+    {
+      "op": "device.create",
+      "device": {
+        "id": "device_lamp",
+        "name": "H1",
+        "kind": "lamp",
+        "parameters": {
+          "color": "amber"
+        },
+        "initial": {}
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_supply",
+        "definition": {
+          "id": "core.dc.supply",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_supply",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 100,
+            "y": 200
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Control supply",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_stop",
+        "definition": {
+          "id": "core.pushbutton.nc",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_stop",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 300,
+            "y": 100
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Stop",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_start",
+        "definition": {
+          "id": "core.pushbutton.no",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_start",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 440,
+            "y": 100
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Start",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_coil",
+        "definition": {
+          "id": "core.relay.coil",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_relay",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 650,
+            "y": 100
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Main relay",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_hold",
+        "definition": {
+          "id": "core.relay.contact.no",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_relay",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 440,
+            "y": 200
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Self-hold",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_pilot",
+        "definition": {
+          "id": "core.relay.contact.no",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_relay",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 440,
+            "y": 300
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Pilot contact",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "instance.place",
+      "sheetId": "sheet_control",
+      "instance": {
+        "id": "instance_lamp",
+        "definition": {
+          "id": "core.lamp",
+          "version": 1
+        },
+        "variant": "default",
+        "deviceId": "device_lamp",
+        "parameters": {},
+        "transform": {
+          "position": {
+            "x": 650,
+            "y": 300
+          },
+          "rotation": 0,
+          "mirrorX": false
+        },
+        "label": "Pilot lamp",
+        "markings": {
+          "showDeviceName": true,
+          "showLabel": true,
+          "showTerminals": true,
+          "terminalLabels": {}
+        }
+      }
+    },
+    {
+      "op": "junction.create",
+      "sheetId": "sheet_control",
+      "junction": {
+        "id": "junction_positive",
+        "position": {
+          "x": 200,
+          "y": 100
+        }
+      }
+    },
+    {
+      "op": "junction.create",
+      "sheetId": "sheet_control",
+      "junction": {
+        "id": "junction_before_start",
+        "position": {
+          "x": 360,
+          "y": 100
+        }
+      }
+    },
+    {
+      "op": "junction.create",
+      "sheetId": "sheet_control",
+      "junction": {
+        "id": "junction_after_start",
+        "position": {
+          "x": 520,
+          "y": 100
+        }
+      }
+    },
+    {
+      "op": "junction.create",
+      "sheetId": "sheet_control",
+      "junction": {
+        "id": "junction_return",
+        "position": {
+          "x": 800,
+          "y": 300
+        }
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_supply_positive",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_supply",
+          "portId": "plus"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_positive"
+        },
+        "waypoints": [
+          {
+            "x": 100,
+            "y": 100
+          }
+        ]
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_to_stop",
+        "from": {
+          "kind": "junction",
+          "junctionId": "junction_positive"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_stop",
+          "portId": "p1"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_stop_output",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_stop",
+          "portId": "p2"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_before_start"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_to_start",
+        "from": {
+          "kind": "junction",
+          "junctionId": "junction_before_start"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_start",
+          "portId": "p1"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_start_output",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_start",
+          "portId": "p2"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_after_start"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_to_coil",
+        "from": {
+          "kind": "junction",
+          "junctionId": "junction_after_start"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_coil",
+          "portId": "a1"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_to_hold",
+        "from": {
+          "kind": "junction",
+          "junctionId": "junction_before_start"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_hold",
+          "portId": "p1"
+        },
+        "waypoints": [
+          {
+            "x": 360,
+            "y": 200
+          }
+        ]
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_hold_output",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_hold",
+          "portId": "p2"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_after_start"
+        },
+        "waypoints": [
+          {
+            "x": 520,
+            "y": 200
+          }
+        ]
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_coil_return",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_coil",
+          "portId": "a2"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_return"
+        },
+        "waypoints": [
+          {
+            "x": 800,
+            "y": 100
+          }
+        ]
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_to_pilot",
+        "from": {
+          "kind": "junction",
+          "junctionId": "junction_positive"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_pilot",
+          "portId": "p1"
+        },
+        "waypoints": [
+          {
+            "x": 200,
+            "y": 300
+          }
+        ]
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_pilot_output",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_pilot",
+          "portId": "p2"
+        },
+        "to": {
+          "kind": "port",
+          "instanceId": "instance_lamp",
+          "portId": "p1"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_lamp_return",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_lamp",
+          "portId": "p2"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_return"
+        },
+        "waypoints": []
+      }
+    },
+    {
+      "op": "wire.add",
+      "sheetId": "sheet_control",
+      "wire": {
+        "id": "wire_supply_return",
+        "from": {
+          "kind": "port",
+          "instanceId": "instance_supply",
+          "portId": "minus"
+        },
+        "to": {
+          "kind": "junction",
+          "junctionId": "junction_return"
+        },
+        "waypoints": [
+          {
+            "x": 100,
+            "y": 400
+          },
+          {
+            "x": 800,
+            "y": 400
+          }
+        ]
+      }
+    }
+  ]
+}

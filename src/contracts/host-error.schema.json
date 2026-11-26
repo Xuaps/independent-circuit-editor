@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:independent-circuit:host-error:1",
+  "type": "object",
+  "properties": {
+    "apiVersion": { "const": 1 }, "command": { "type": "null" },
+    "ok": { "const": false }, "exitCode": { "const": 2 }, "result": { "type": "null" },
+    "diagnostics": {
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "urn:circuit-editor:schema:common:1#/$defs/diagnostic" },
+      "contains": { "type": "object", "properties": { "severity": { "const": "error" } }, "required": ["severity"] }
+    }
+  },
+  "required": ["apiVersion", "command", "ok", "exitCode", "result", "diagnostics"],
+  "additionalProperties": false
+}

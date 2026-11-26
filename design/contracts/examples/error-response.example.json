@@ -1,0 +1,15 @@
+{
+  "apiVersion": 1,
+  "command": "inspect",
+  "ok": false,
+  "exitCode": 3,
+  "diagnostics": [
+    {
+      "code": "UNSUPPORTED_FORMAT",
+      "severity": "error",
+      "message": "Illustrative protocol error, not captured execution.",
+      "objectIds": []
+    }
+  ],
+  "result": null
+}

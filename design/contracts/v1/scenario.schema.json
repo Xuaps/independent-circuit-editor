@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:circuit-editor:schema:scenario:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "circuit-scenario"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "target": {
+      "$ref": "urn:circuit-editor:schema:common:1#/$defs/projectIdentity"
+    },
+    "untilMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 86400000
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxEvents": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "maxDeltaCycles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "maxTraceEntries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        }
+      },
+      "required": [
+        "maxEvents",
+        "maxDeltaCycles",
+        "maxTraceEntries"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 86400000
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "instanceId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                },
+                "action": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                },
+                "payload": {
+                  "type": "object",
+                  "properties": {},
+                  "required": [],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "instanceId",
+                "action",
+                "payload"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 128
+          }
+        },
+        "required": [
+          "atMs",
+          "sequence",
+          "actions"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "probes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 86400000
+          },
+          "target": {
+            "$ref": "urn:circuit-editor:schema:common:1#/$defs/probeTarget"
+          },
+          "observable": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+          }
+        },
+        "required": [
+          "atMs",
+          "target",
+          "observable"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "expect": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "run"
+                },
+                "status": {
+                  "const": "completed"
+                }
+              },
+              "required": [
+                "stage",
+                "status"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "run"
+                },
+                "status": {
+                  "const": "faulted"
+                },
+                "code": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+                }
+              },
+              "required": [
+                "stage",
+                "status",
+                "code"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "stage": {
+                  "const": "validation"
+                },
+                "status": {
+                  "const": "rejected"
+                },
+                "code": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+                }
+              },
+              "required": [
+                "stage",
+                "status",
+                "code"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "atMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 86400000
+              },
+              "target": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/probeTarget"
+              },
+              "observable": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "expected": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/observableValue"
+              }
+            },
+            "required": [
+              "atMs",
+              "target",
+              "observable",
+              "expected"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "outcome",
+        "observations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "format",
+    "formatVersion",
+    "target",
+    "untilMs",
+    "limits",
+    "inputs",
+    "probes"
+  ],
+  "additionalProperties": false
+}

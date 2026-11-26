@@ -1,0 +1,246 @@
+{
+  "format": "circuit-design-profile",
+  "formatVersion": 1,
+  "status": "proposed-not-implemented",
+  "modelSet": {
+    "id": "core.dc",
+    "version": 1
+  },
+  "deviceObservables": {
+    "dcSupply": {
+      "enabled": "boolean"
+    },
+    "pushButton": {
+      "pressed": "boolean"
+    },
+    "relay": {
+      "energized": "boolean"
+    },
+    "lamp": {
+      "lit": "boolean"
+    }
+  },
+  "definitions": [
+    {
+      "id": "core.dc.supply",
+      "version": 1,
+      "deviceKind": "dcSupply",
+      "role": "controller",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "plus",
+          "role": "positive",
+          "anchor": {
+            "x": 0,
+            "y": -30
+          },
+          "defaultMarking": "+"
+        },
+        {
+          "id": "minus",
+          "role": "return",
+          "anchor": {
+            "x": 0,
+            "y": 30
+          },
+          "defaultMarking": "−"
+        }
+      ],
+      "actions": [],
+      "observables": {}
+    },
+    {
+      "id": "core.pushbutton.no",
+      "version": 1,
+      "deviceKind": "pushButton",
+      "role": "controller",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "p1",
+          "role": "switched",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "1"
+        },
+        {
+          "id": "p2",
+          "role": "switched",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "2"
+        }
+      ],
+      "actions": [
+        "press",
+        "release"
+      ],
+      "observables": {
+        "closed": "boolean"
+      }
+    },
+    {
+      "id": "core.pushbutton.nc",
+      "version": 1,
+      "deviceKind": "pushButton",
+      "role": "controller",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "p1",
+          "role": "switched",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "1"
+        },
+        {
+          "id": "p2",
+          "role": "switched",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "2"
+        }
+      ],
+      "actions": [
+        "press",
+        "release"
+      ],
+      "observables": {
+        "closed": "boolean"
+      }
+    },
+    {
+      "id": "core.relay.coil",
+      "version": 1,
+      "deviceKind": "relay",
+      "role": "controller",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "a1",
+          "role": "load",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "A1"
+        },
+        {
+          "id": "a2",
+          "role": "load",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "A2"
+        }
+      ],
+      "actions": [],
+      "observables": {
+        "powered": "boolean"
+      }
+    },
+    {
+      "id": "core.relay.contact.no",
+      "version": 1,
+      "deviceKind": "relay",
+      "role": "observer",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "p1",
+          "role": "switched",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "1"
+        },
+        {
+          "id": "p2",
+          "role": "switched",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "2"
+        }
+      ],
+      "actions": [],
+      "observables": {
+        "closed": "boolean"
+      }
+    },
+    {
+      "id": "core.relay.contact.nc",
+      "version": 1,
+      "deviceKind": "relay",
+      "role": "observer",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "p1",
+          "role": "switched",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "1"
+        },
+        {
+          "id": "p2",
+          "role": "switched",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "2"
+        }
+      ],
+      "actions": [],
+      "observables": {
+        "closed": "boolean"
+      }
+    },
+    {
+      "id": "core.lamp",
+      "version": 1,
+      "deviceKind": "lamp",
+      "role": "controller",
+      "domain": "electrical.dc",
+      "ports": [
+        {
+          "id": "p1",
+          "role": "load",
+          "anchor": {
+            "x": -20,
+            "y": 0
+          },
+          "defaultMarking": "1"
+        },
+        {
+          "id": "p2",
+          "role": "load",
+          "anchor": {
+            "x": 20,
+            "y": 0
+          },
+          "defaultMarking": "2"
+        }
+      ],
+      "actions": [],
+      "observables": {
+        "lit": "boolean"
+      }
+    }
+  ]
+}

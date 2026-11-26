@@ -1,0 +1,4 @@
+{
+  "compilerOptions": { "target": "ES2022", "lib": ["ES2022", "WebWorker"], "module": "ESNext", "moduleResolution": "Bundler", "strict": true, "noUncheckedIndexedAccess": true, "exactOptionalPropertyTypes": true, "skipLibCheck": true, "noEmit": true, "types": [], "resolveJsonModule": true, "esModuleInterop": true },
+  "include": ["src/service-worker.ts", "src/hosts/browser/simulation/worker.ts"]
+}

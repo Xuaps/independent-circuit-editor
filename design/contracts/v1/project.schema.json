@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:circuit-editor:schema:project:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "circuit-project"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "revision": {
+      "$ref": "urn:circuit-editor:schema:common:1#/$defs/revision"
+    },
+    "modelSet": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "const": "core.dc"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "devices": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:circuit-editor:schema:common:1#/$defs/device"
+      },
+      "minItems": 0,
+      "maxItems": 2000
+    },
+    "sheets": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:circuit-editor:schema:common:1#/$defs/sheet"
+      },
+      "minItems": 1,
+      "maxItems": 1
+    }
+  },
+  "required": [
+    "format",
+    "formatVersion",
+    "projectId",
+    "revision",
+    "modelSet",
+    "title",
+    "devices",
+    "sheets"
+  ],
+  "additionalProperties": false
+}

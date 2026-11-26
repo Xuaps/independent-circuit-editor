@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:circuit-editor:schema:operations:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "circuit-operations"
+    },
+    "formatVersion": {
+      "const": 1
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "expectedRevision": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/revision"
+        }
+      },
+      "required": [
+        "projectId",
+        "expectedRevision"
+      ],
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "device.create"
+              },
+              "device": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/device"
+              }
+            },
+            "required": [
+              "op",
+              "device"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "device.rename"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+              }
+            },
+            "required": [
+              "op",
+              "deviceId",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "device.parameters.replace"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "parameters": {
+                "type": "object",
+                "maxProperties": 32,
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                },
+                "additionalProperties": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ],
+                  "maxLength": 1024,
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              }
+            },
+            "required": [
+              "op",
+              "deviceId",
+              "parameters"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "device.remove"
+              },
+              "deviceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "op",
+              "deviceId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "instance.place"
+              },
+              "sheetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "instance": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/instance"
+              }
+            },
+            "required": [
+              "op",
+              "sheetId",
+              "instance"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "instance.bind"
+              },
+              "instanceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "deviceId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "instanceId",
+              "deviceId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "instance.transform"
+              },
+              "instanceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "transform": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/transform"
+              }
+            },
+            "required": [
+              "op",
+              "instanceId",
+              "transform"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "instance.presentation.replace"
+              },
+              "instanceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "markings": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/markings"
+              }
+            },
+            "required": [
+              "op",
+              "instanceId",
+              "label",
+              "markings"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "instance.remove"
+              },
+              "instanceId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "op",
+              "instanceId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "junction.create"
+              },
+              "sheetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "junction": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/junction"
+              }
+            },
+            "required": [
+              "op",
+              "sheetId",
+              "junction"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "junction.remove"
+              },
+              "junctionId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "op",
+              "junctionId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "wire.add"
+              },
+              "sheetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "wire": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/wire"
+              }
+            },
+            "required": [
+              "op",
+              "sheetId",
+              "wire"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "wire.replace"
+              },
+              "wireId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "from": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/endpoint"
+              },
+              "to": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/endpoint"
+              },
+              "waypoints": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "integer",
+                      "minimum": -1000000,
+                      "maximum": 1000000
+                    },
+                    "y": {
+                      "type": "integer",
+                      "minimum": -1000000,
+                      "maximum": 1000000
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 0,
+                "maxItems": 256
+              }
+            },
+            "required": [
+              "op",
+              "wireId",
+              "from",
+              "to",
+              "waypoints"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "wire.remove"
+              },
+              "wireId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "op",
+              "wireId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "annotation.add"
+              },
+              "sheetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "annotation": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/annotation"
+              }
+            },
+            "required": [
+              "op",
+              "sheetId",
+              "annotation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "annotation.remove"
+              },
+              "annotationId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              }
+            },
+            "required": [
+              "op",
+              "annotationId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "const": "page.replace"
+              },
+              "sheetId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+              },
+              "page": {
+                "$ref": "urn:circuit-editor:schema:common:1#/$defs/page"
+              }
+            },
+            "required": [
+              "op",
+              "sheetId",
+              "page"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "format",
+    "formatVersion",
+    "target",
+    "operations"
+  ],
+  "additionalProperties": false
+}

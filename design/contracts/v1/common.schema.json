@@ -1,0 +1,853 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:circuit-editor:schema:common:1",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+    },
+    "scalar": {
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ],
+      "maxLength": 1024,
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+    },
+    "point": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": -1000000,
+          "maximum": 1000000
+        },
+        "y": {
+          "type": "integer",
+          "minimum": -1000000,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "modelSet": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "const": "core.dc"
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "definitionRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^core\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$",
+          "maxLength": 96
+        },
+        "version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "device": {
+      "oneOf": [
+        {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/device_dcSupply"
+        },
+        {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/device_pushButton"
+        },
+        {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/device_relay"
+        },
+        {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/device_lamp"
+        }
+      ]
+    },
+    "device_dcSupply": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+        },
+        "kind": {
+          "const": "dcSupply"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "nominalVoltageV": {
+              "const": 24
+            }
+          },
+          "required": [
+            "nominalVoltageV"
+          ],
+          "additionalProperties": false
+        },
+        "initial": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "parameters",
+        "initial"
+      ],
+      "additionalProperties": false
+    },
+    "device_pushButton": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+        },
+        "kind": {
+          "const": "pushButton"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "initial": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "parameters",
+        "initial"
+      ],
+      "additionalProperties": false
+    },
+    "device_relay": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+        },
+        "kind": {
+          "const": "relay"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "initial": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "parameters",
+        "initial"
+      ],
+      "additionalProperties": false
+    },
+    "device_lamp": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,31}$"
+        },
+        "kind": {
+          "const": "lamp"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "color": {
+              "enum": [
+                "amber",
+                "green",
+                "red",
+                "blue",
+                "white"
+              ]
+            }
+          },
+          "required": [
+            "color"
+          ],
+          "additionalProperties": false
+        },
+        "initial": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "parameters",
+        "initial"
+      ],
+      "additionalProperties": false
+    },
+    "transform": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "y": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        },
+        "rotation": {
+          "enum": [
+            0,
+            90,
+            180,
+            270
+          ]
+        },
+        "mirrorX": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "position",
+        "rotation",
+        "mirrorX"
+      ],
+      "additionalProperties": false
+    },
+    "markings": {
+      "type": "object",
+      "properties": {
+        "showDeviceName": {
+          "type": "boolean"
+        },
+        "showLabel": {
+          "type": "boolean"
+        },
+        "showTerminals": {
+          "type": "boolean"
+        },
+        "terminalLabels": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+          },
+          "maxProperties": 32,
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 32
+          }
+        }
+      },
+      "required": [
+        "showDeviceName",
+        "showLabel",
+        "showTerminals",
+        "terminalLabels"
+      ],
+      "additionalProperties": false
+    },
+    "instance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "definition": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^core\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$",
+              "maxLength": 96
+            },
+            "version": {
+              "const": 1
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "variant": {
+          "const": "default"
+        },
+        "deviceId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "transform": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/transform"
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "markings": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/markings"
+        }
+      },
+      "required": [
+        "id",
+        "definition",
+        "variant",
+        "deviceId",
+        "parameters",
+        "transform",
+        "label",
+        "markings"
+      ],
+      "additionalProperties": false
+    },
+    "junction": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "y": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "position"
+      ],
+      "additionalProperties": false
+    },
+    "endpoint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "port"
+            },
+            "instanceId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+            },
+            "portId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+            }
+          },
+          "required": [
+            "kind",
+            "instanceId",
+            "portId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "junction"
+            },
+            "junctionId": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+            }
+          },
+          "required": [
+            "kind",
+            "junctionId"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "dangling"
+            },
+            "position": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "integer",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "y": {
+                  "type": "integer",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "kind",
+            "position"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "wire": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "from": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/endpoint"
+        },
+        "to": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/endpoint"
+        },
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "integer",
+                "minimum": -1000000,
+                "maximum": 1000000
+              },
+              "y": {
+                "type": "integer",
+                "minimum": -1000000,
+                "maximum": 1000000
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 256
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "waypoints"
+      ],
+      "additionalProperties": false
+    },
+    "annotation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "y": {
+              "type": "integer",
+              "minimum": -1000000,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "id",
+        "position",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "page": {
+      "type": "object",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 100000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 100000
+        },
+        "unit": {
+          "const": "du"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "sheet": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "page": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/page"
+        },
+        "instances": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:circuit-editor:schema:common:1#/$defs/instance"
+          },
+          "minItems": 0,
+          "maxItems": 2000
+        },
+        "junctions": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:circuit-editor:schema:common:1#/$defs/junction"
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        },
+        "wires": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:circuit-editor:schema:common:1#/$defs/wire"
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:circuit-editor:schema:common:1#/$defs/annotation"
+          },
+          "minItems": 0,
+          "maxItems": 1000
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "page",
+        "instances",
+        "junctions",
+        "wires",
+        "annotations"
+      ],
+      "additionalProperties": false
+    },
+    "projectIdentity": {
+      "type": "object",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "revision": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/revision"
+        },
+        "modelSet": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "core.dc"
+            },
+            "version": {
+              "const": 1
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "projectId",
+        "revision",
+        "modelSet"
+      ],
+      "additionalProperties": false
+    },
+    "probeTarget": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "device",
+            "instance"
+          ]
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "observableValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "quality": {
+              "const": "known"
+            },
+            "value": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ],
+              "maxLength": 1024,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "quality",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "quality": {
+              "enum": [
+                "unknown",
+                "unsupported",
+                "faulted"
+              ]
+            },
+            "code": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+            }
+          },
+          "required": [
+            "quality",
+            "code"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/probeTarget"
+        },
+        "observable": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "value": {
+          "$ref": "urn:circuit-editor:schema:common:1#/$defs/observableValue"
+        }
+      },
+      "required": [
+        "target",
+        "observable",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "objectIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 100
+        },
+        "atMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400000
+        },
+        "operationIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9999
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "objectIds"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

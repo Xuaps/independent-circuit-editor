@@ -1,0 +1,46 @@
+{
+  "name": "independent-circuit-editor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23",
+    "npm": ">=10 <12"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.cli.json && tsc -p tsconfig.worker.json",
+    "check:boundaries": "node implementation/validation/import-boundaries.mjs",
+    "notices": "node scripts/create-third-party-notices.mjs",
+    "build": "npm run check:boundaries && npm run notices && vite build && esbuild src/cli/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/cli/index.js --metafile=dist/cli/meta.json && node implementation/validation/import-boundaries.mjs --bundle dist/cli/meta.json && chmod +x dist/cli/index.js",
+    "test:contracts": "vitest run tests/contracts",
+    "test:unit": "vitest run --exclude 'tests/browser/**' --exclude 'tests/contracts/**'",
+    "test:browser:smoke": "playwright test tests/browser/smoke.spec.ts",
+    "test": "npm run check:boundaries && npm run test:unit && npm run test:contracts && npm run test:integration && npm run test:browser",
+    "test:browser": "playwright test",
+    "circuit": "node dist/cli/index.js",
+    "test:integration": "npm run build && npm run test:integration:built",
+    "test:integration:built": "vitest run --config vitest.integration.config.ts",
+    "manifest": "node scripts/create-dist-manifest.mjs"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.19.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "esbuild": "0.25.12",
+    "fast-check": "4.3.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.8",
+    "vitest": "4.1.12"
+  },
+  "bin": {
+    "circuit": "dist/cli/index.js"
+  }
+}

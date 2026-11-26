@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2022"
+    ],
+    "jsx": "preserve",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/core/**/*.ts",
+    "src/contracts/**/*.ts",
+    "src/cli/**/*.ts",
+    "src/hosts/node/**/*.ts",
+    "vitest.integration.config.ts"
+  ],
+  "exclude": [
+    "src/ui",
+    "tests"
+  ]
+}
