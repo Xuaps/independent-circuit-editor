@@ -8,10 +8,10 @@ Browsers isolate data by origin. Local recovery stored in `localStorage`, the se
 
 For a project in this application's own format:
 
-1. At the old origin, use **Download copy**.
-2. Independently verify that the downloaded file is present and readable.
-3. At the new origin, use **Open** to load that file.
-4. Wait for the new origin to report **Offline ready** before relying on offline reload there.
-5. Keep the downloaded file as a backup.
+1. At the old origin, use **Save**, or **Download copy** where shown, to produce a `.circuit.json` file.
+2. Independently verify that the saved or downloaded file is present and readable.
+3. Make and retain a backup of that file.
+4. At the new origin, use **Open** to load the verified file.
+5. Wait for the new origin to report **Offline ready** before relying on offline reload there.
 
 This migration guide does not announce an automatic redirect or retirement of the old origin. The personal site remains an independent legacy deployment during migration.
