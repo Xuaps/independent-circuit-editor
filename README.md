@@ -74,7 +74,7 @@ GitHub Actions validates pull requests without publication permissions. A green 
 
 Pages activation, the first push, and the first deployment remain owner-controlled operations.
 
-See [operations and rollback](docs/OPERATIONS.md).
+See [operations and rollback](docs/OPERATIONS.md) and the [origin migration guide](docs/ORIGIN-MIGRATION.md), including browser-state and offline-readiness limitations between origins.
 
 ## License
 

@@ -24,4 +24,4 @@ A rollback is still a deployment and requires the owner's applicable release aut
 
 ## Cost and platform boundary
 
-The intended target is the free GitHub Pages root site for `dvilchez.github.io`. The workflow does not subscribe to external hosting, paid Actions runners, or paid services. Repository administrators must keep billing and spending limits disabled unless the owner explicitly changes that policy.
+The intended target is the free GitHub Pages deployment for the organization repository `Xuaps/independent-circuit-editor` at the custom root origin `https://circuits.xuaps.com/`. During migration, `https://dvilchez.github.io/` remains an independent legacy deployment; the new deployment does not automatically redirect or retire it. The workflow does not subscribe to external hosting, paid Actions runners, or paid services. Repository administrators must keep billing and spending limits disabled unless the owner explicitly changes that policy.
