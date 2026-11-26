@@ -29,7 +29,7 @@ env:
 jobs:
   verify:
     name: Verify exact source and build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
       source_sha: ${{ steps.source.outputs.sha }}
@@ -131,7 +131,7 @@ jobs:
     name: Deploy verified Pages artifact
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -154,7 +154,7 @@ jobs:
     name: Smoke-test deployed site
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)
     needs: [verify, deploy]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
