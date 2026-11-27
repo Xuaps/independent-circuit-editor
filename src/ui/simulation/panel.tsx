@@ -11,12 +11,27 @@ export function SimulationControls({ client, view, busy, actuation }: { client: 
       <details name="command-menu" className="runtime-menu" onClick={event => { if ((event.target as HTMLElement).closest('button')) event.currentTarget.open = false; }}><summary>Runtime</summary><button onClick={() => { actuation.release(); client.stop(true); }}>Reset runtime</button></details></nav>
   </div>;
 }
-export function SimulationPanel({ client, view, select, actuation }: { client: EditorClient; view: EditorView; select(ids: string[]): void; actuation: Actuation }) {
+export function SimulationPanel({ client, view, select, actuation, missingDcSource, unassignedRelayContacts }: {
+  client: EditorClient; view: EditorView; select(ids: string[]): void; actuation: Actuation;
+  missingDcSource: boolean;
+  unassignedRelayContacts: readonly { readonly id: string; readonly label: string }[];
+}) {
   const active = view.mode !== 'Editing', runtime = view.runtime;
   return <section className="simulation" aria-label="Simulation" hidden={!active && !runtime}>
     <h2>Simulation — {view.mode}</h2>
     <p data-testid="runtime-clock">Virtual time: {runtime?.timeMs ?? 0} ms</p>
     {client.runtimeError() && <p role="alert">{client.runtimeError()}</p>}
+    {(missingDcSource || unassignedRelayContacts.length > 0) && <section aria-label="Design readiness">
+      <h3>Design readiness</h3>
+      {missingDcSource && <p>No DC source is placed. Use Stop simulation to unlock editing, then choose DC source in Build and place one.</p>}
+      {unassignedRelayContacts.length > 0 && <>
+        <p>Select a contact below, then use <strong>Stop simulation</strong> to unlock editing. In the Selection inspector, choose the intended relay coil’s device under <strong>Bound device</strong>, then select <strong>Apply binding</strong>.</p>
+        <ul>{unassignedRelayContacts.map(({ id, label }) => <li key={id}>
+          <button onClick={() => select([id])}>Select {label}</button>
+          <p>This contact is not bound to a relay device.</p>
+        </li>)}</ul>
+      </>}
+    </section>}
 
     {active && <div aria-label="Momentary controls">{view.design.sheets.flatMap(s => s.instances).filter(i => i.definition.id.startsWith('core.pushbutton.')).map(i => {
       const name = view.design.devices.find(d => d.id === i.deviceId)?.name ?? i.id;

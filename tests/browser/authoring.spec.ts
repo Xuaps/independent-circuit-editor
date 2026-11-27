@@ -19,6 +19,22 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => { if (oracleDirectory) await rm(oracleDirectory, { recursive: true, force: true }); });
 
+test('blank canvas guide disappears for a junction-only sheet and returns on Undo', async ({ page }) => {
+  await open(page);
+  const guide = page.getByText('Your circuit starts here', { exact: true });
+  const emptySheet = (await graph(page)).sheets[0]!;
+  expect(emptySheet).toMatchObject({ instances: [], annotations: [], wires: [], junctions: [] });
+  await expect(guide).toBeVisible();
+
+  const id = await node(page, 200, 200);
+  expect((await graph(page)).sheets[0]).toEqual({ ...emptySheet, junctions: [{ id, position: { x: 200, y: 200 } }] });
+  await expect(guide).toHaveCount(0);
+
+  await page.getByRole('button', { name: /^Undo \(/ }).click();
+  await expect.poll(async () => (await graph(page)).sheets[0]).toEqual(emptySheet);
+  await expect(guide).toBeVisible();
+});
+
 test('visible blank authoring makes a complete selfhold/lamp graph with deliberate binding and junctions', async ({ page }) => {
   const browser = observeBrowser(page); await open(page);
   expect((await graph(page)).sheets[0]!.instances).toHaveLength(0);

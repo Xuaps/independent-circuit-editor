@@ -36,6 +36,17 @@ export function App({ client: supplied }: { client?: EditorClient }) {
   const current = sheet.instances.find(i => i.id === selection[0]), selectedWire = sheet.wires.find(w => w.id === selection[0]), junction = sheet.junctions.find(j => j.id === selection[0]);
   const selectedAnnotation = sheet.annotations.find(a => a.id === selection[0]);
   const preflight = client.preflight();
+  const faultedWithoutRuntime = view.mode === 'Faulted' && !view.runtime;
+  const missingDcSource = faultedWithoutRuntime && preflight.some(d => d.code === 'SOURCE_COUNT')
+    && !sheet.instances.some(i => i.definition.id === 'core.dc.supply');
+  const unboundIds = faultedWithoutRuntime
+    ? new Set(preflight.filter(d => d.code === 'UNBOUND_INSTANCE').flatMap(d => d.objectIds)) : null;
+  const unassignedRelayContacts = unboundIds?.size ? sheet.instances.filter(i =>
+    unboundIds.has(i.id) && i.deviceId === null && (i.definition.id === 'core.relay.contact.no' || i.definition.id === 'core.relay.contact.nc'),
+  ).map(i => ({
+    id: i.id,
+    label: `${titles[i.definition.id]}${i.label ? ` · ${i.label}` : ''} (${i.transform.position.x}, ${i.transform.position.y})`,
+  })) : [];
   const endpoints: { value: string; label: string; endpoint: Endpoint }[] = [
     ...sheet.instances.flatMap(i => getDefinition(i.definition.id)!.ports.map(p => ({ value: `${i.id}/${p.id}`, label: `${project.devices.find(d => d.id === i.deviceId)?.name ?? 'Unassigned'} ${titles[i.definition.id]} ${p.defaultMarking} (${p.id}) [${i.id.slice(-6)}]`, endpoint: { kind: 'port' as const, instanceId: i.id, portId: p.id } }))),
     ...sheet.junctions.map((j, n) => ({ value: j.id, label: `Junction ${n + 1} (${j.position.x},${j.position.y})`, endpoint: { kind: 'junction' as const, junctionId: j.id } }))
@@ -173,11 +184,11 @@ export function App({ client: supplied }: { client?: EditorClient }) {
           {tool !== 'select' && <g pointerEvents="none" opacity=".65">{getDefinition(tool) && <g transform={`translate(${position.x} ${position.y}) rotate(${placementRotation}) scale(${placementMirror ? -1 : 1} 1)`}><Glyph instance={{ definition: { id: tool, version: 1 } }}/></g>}<circle cx={position.x} cy={position.y} r="12" fill="none" stroke="#005ca5"/><path d={`M ${position.x - 18} ${position.y} H ${position.x + 18} M ${position.x} ${position.y - 18} V ${position.y + 18}`} stroke="#005ca5"/>{wireStart && (() => { const a = endpointPosition(sheet, wireStart); return a && <polyline points={`${a.x},${a.y} ${position.x},${a.y} ${position.x},${position.y}`} fill="none" stroke="#005ca5" strokeDasharray="5 3"/>; })()}</g>}
         </svg>
 
-        {!sheet.instances.length && !sheet.annotations.length && !sheet.wires.length && <div className="blank-canvas"><strong>Your circuit starts here</strong><p>Choose a part on the left.<br/>Place repeatedly; Escape returns to Select.</p><span>Own-format · ideal 24 V DC</span></div>}
+        {!sheet.instances.length && !sheet.annotations.length && !sheet.wires.length && !sheet.junctions.length && <div className="blank-canvas"><strong>Your circuit starts here</strong><p>Choose a part on the left.<br/>Place repeatedly; Escape returns to Select.</p><span>Own-format · ideal 24 V DC</span></div>}
         <div className="drawing-status"><p role="status">{notice}</p><span>Tool: {titles[tool] ?? tool}{getDefinition(tool) && ` · ${placementRotation}°${placementMirror ? ' mirrored' : ''}`} · Selected {selection.length}</span></div>
       </section>
       <aside className="inspector-panel" aria-label="Inspector and wiring">
-        <SimulationPanel client={client} view={view} select={setSelection} actuation={actuation}/>
+        <SimulationPanel client={client} view={view} select={setSelection} actuation={actuation} missingDcSource={missingDcSource} unassignedRelayContacts={unassignedRelayContacts}/>
         <fieldset disabled={view.mode !== 'Editing'} className="selection-inspector"><h2>Selection inspector</h2>
         {!selection.length && <div className="selection-hint"><h3>Select a symbol</h3><p>Choose a symbol on the drawing or in Objects to edit its label, binding and presentation.</p><p className="muted">Wire from terminal to terminal. Crossings never join automatically.</p></div>}
         {selection.length > 1 && <p>Multiple selection: transforms support symbols only. Copy supports symbols, wires and junctions. Annotations cannot move/copy.</p>}
@@ -212,7 +223,9 @@ export function App({ client: supplied }: { client?: EditorClient }) {
         <details className="diagnostics" open={issues.length > 0}><summary>Diagnostics / preflight ({issues.length + preflight.length})</summary>{issues.map((d, n) => <p role="alert" key={n}><button onClick={() => setSelection([...d.objectIds])}>{d.code}: {d.message} {d.objectIds.join(', ')}</button></p>)}<p>No electrical solve in preflight.</p>{preflight.map((d, n) => <p key={n}><button onClick={() => setSelection([...d.objectIds])}>{d.code}: {d.message} {d.objectIds.join(', ')}</button></p>)}</details>
       </aside>
     </div>
-    <footer className="history-bar"><nav aria-label="History"><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.undoCount} onClick={() => void send({ kind: 'undo' })}>Undo ({view.history.undoCount})</button><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.redoCount} onClick={() => void send({ kind: 'redo' })}>Redo ({view.history.redoCount})</button></nav><span>{view.mode === 'Editing' ? 'DESIGN · applied changes only' : 'LIVE · acknowledged worker state'} · Potential is not current</span></footer>
+    <footer className="history-bar"><nav aria-label="History"><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.undoCount} onClick={() => void send({ kind: 'undo' })}>Undo ({view.history.undoCount})</button><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.redoCount} onClick={() => void send({ kind: 'redo' })}>Redo ({view.history.redoCount})</button></nav><span>{view.mode === 'Editing' ? 'DESIGN · applied changes only' : 'LIVE · acknowledged worker state'} · Potential is not current</span>
+      <span>Educational simulation · ideal 24 V DC · Not for real electrical installations.</span>
+    </footer>
   </main>;
 }
 

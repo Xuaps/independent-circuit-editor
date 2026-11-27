@@ -1,6 +1,9 @@
 import { advanced, inspectProject, moreFiles } from './helpers/authoring';
 import { test, expect } from '@playwright/test';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, readdir, mkdtemp, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { once } from 'node:events';
+import { createServer } from 'node:http';
 import { build } from 'esbuild';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -15,9 +18,74 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => { if (oracleDir) await rm(oracleDir, { recursive: true, force: true }); });
 
+for (const stalePath of ['/', '/index.html']) {
+  test(`production service worker rejects a stale 200 shell at ${stalePath}`, async ({ page }) => {
+    const dist = 'dist/ui';
+    const html = await readFile(join(dist, 'index.html'));
+    const worker = await readFile(join(dist, 'service-worker.js'));
+    expect(worker.toString()).toContain(JSON.stringify(createHash('sha256').update(html).digest('hex')));
+    // Keep the module references intact so checking asset names is not sufficient.
+    const stale = Buffer.concat([html, Buffer.from('<!-- stale shell -->')]);
+    const files = new Map([
+      ['/fixture', Buffer.from('<!doctype html><title>Offline install fixture</title>')],
+      ['/', stalePath === '/' ? stale : html],
+      ['/index.html', stalePath === '/index.html' ? stale : html],
+      ['/service-worker.js', worker],
+      ['/selfhold.circuit.json', await readFile(join(dist, 'selfhold.circuit.json'))],
+    ]);
+    for (const name of await readdir(join(dist, 'assets'))) {
+      files.set(`/assets/${name}`, await readFile(join(dist, 'assets', name)));
+    }
+    const served = new Map<string, number>();
+    const server = createServer((request, response) => {
+      const path = request.url ?? '';
+      const body = files.get(path);
+      const status = body ? 200 : 404;
+      served.set(path, status);
+      const mime = path.endsWith('.js') ? 'text/javascript' : path.endsWith('.css') ? 'text/css'
+        : path.endsWith('.json') ? 'application/json' : 'text/html';
+      response.writeHead(status, { 'Content-Type': mime, 'Cache-Control': 'no-store' });
+      response.end(body);
+    });
+    try {
+      await once(server.listen(0, '127.0.0.1'), 'listening');
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('Expected a loopback TCP listener');
+      await page.goto(`http://127.0.0.1:${address.port}/fixture`);
+      const state = await page.evaluate(async () => {
+        const registration = await navigator.serviceWorker.register('/service-worker.js');
+        const candidate = registration.installing ?? registration.waiting ?? registration.active;
+        if (!candidate) throw new Error('Expected a service worker candidate');
+        return await new Promise<ServiceWorkerState>(resolve => {
+          const observe = () => {
+            if (candidate.state === 'redundant' || candidate.state === 'installed' || candidate.state === 'activated') {
+              candidate.removeEventListener('statechange', observe);
+              resolve(candidate.state);
+            }
+          };
+          candidate.addEventListener('statechange', observe);
+          observe();
+        });
+      });
+      expect(state).toBe('redundant');
+      for (const path of files.keys()) expect(served.get(path), path).toBe(200);
+      expect(await page.evaluate(() => caches.keys())).toEqual([]);
+    } finally {
+      const closed = new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      server.closeAllConnections();
+      await closed;
+    }
+  });
+}
+
 test('real production service worker precache controls page and restarts offline with example', async ({ page, context }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/'); await page.locator('.file-feedback > summary').click(); await expect(page.getByText('Offline ready', { exact: false })).toBeVisible();
+  await page.waitForFunction(() => navigator.serviceWorker.controller?.state === 'activated');
+  expect(await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration('/');
+    return !!registration?.active && registration.active === navigator.serviceWorker.controller;
+  })).toBe(true);
   const cache = await page.evaluate(async () => { const keys = await caches.keys(); const own = keys.filter(k => k.startsWith('independent-circuit-static-')); return { own, paths: await Promise.all(own.map(async k => (await (await caches.open(k)).keys()).map(r => new URL(r.url).pathname))), controlled: !!navigator.serviceWorker.controller }; });
   expect(cache.controlled).toBe(true); expect(cache.own).toHaveLength(1); expect(cache.own[0]).toMatch(/[a-f0-9]{20}$/);
   expect(cache.paths[0]).toContain('/index.html'); expect(cache.paths[0]).toContain('/selfhold.circuit.json'); expect(cache.paths[0]?.every(p => ['/', '/index.html', '/selfhold.circuit.json'].includes(p) || p.startsWith('/assets/'))).toBe(true);

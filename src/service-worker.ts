@@ -2,15 +2,35 @@
 export {};
 declare const __ASSETS__: string[];
 declare const __VERSION__: string;
+declare const __HTML_SHA256__: string;
 const scope = self as unknown as ServiceWorkerGlobalScope;
 const prefix = 'independent-circuit-static-';
 const cacheName = prefix + __VERSION__;
 const assets = __ASSETS__;
+async function verifyCachedShell(): Promise<void> {
+  for (const path of ['/', '/index.html']) {
+    const response = await caches.match(path, { cacheName });
+    if (!response?.ok) throw new Error(`Missing cached offline shell: ${path}`);
+    const digest = await crypto.subtle.digest('SHA-256', await response.arrayBuffer());
+    const sha256 = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    if (sha256 !== __HTML_SHA256__) throw new Error(`Unexpected cached offline shell: ${path}`);
+  }
+}
 scope.addEventListener('install', event => {
   // No skipWaiting: an updated build waits until all existing app tabs close.
   event.waitUntil((async () => {
-    try { await (await caches.open(cacheName)).addAll(assets); }
-    catch (error) { await caches.delete(cacheName); throw error; }
+    // This name may be shared by the active worker (e.g. the same script at a new URL).
+    if (scope.registration.active && await caches.has(cacheName)) {
+      await verifyCachedShell();
+      for (const path of assets) {
+        if (!(await caches.match(path, { cacheName }))?.ok) throw new Error(`Missing cached offline asset: ${path}`);
+      }
+      return;
+    }
+    try {
+      await (await caches.open(cacheName)).addAll(assets);
+      await verifyCachedShell();
+    } catch (error) { await caches.delete(cacheName); throw error; }
     // A completed active cache is oldest: activation previously removed every predecessor.
     // Retain it plus this complete waiting build; replace superseded waiting caches only.
     const previous = (await caches.keys()).filter(key => key.startsWith(prefix) && key !== cacheName);
