@@ -243,6 +243,7 @@ export function App({ client: supplied }: { client?: EditorClient }) {
     </div>
     <footer className="history-bar"><nav aria-label="History"><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.undoCount} onClick={() => void send({ kind: 'undo' })}>Undo ({view.history.undoCount})</button><button disabled={fileBusy || view.mode !== 'Editing' || !view.history.redoCount} onClick={() => void send({ kind: 'redo' })}>Redo ({view.history.redoCount})</button></nav><span>{view.mode === 'Editing' ? 'DESIGN · applied changes only' : 'LIVE · acknowledged worker state'} · Potential is not current</span>
       <span>Educational simulation · ideal 24 V DC · Not for real electrical installations.</span>
+      <a href="https://github.com/Xuaps/independent-circuit-editor/issues" target="_blank" rel="noopener noreferrer">Report an issue</a>
     </footer>
   </main>;
 }
