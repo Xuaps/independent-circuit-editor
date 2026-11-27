@@ -9,6 +9,7 @@ import { createProject } from '../../src/core/domain/project';
 import { applyOperations } from '../../src/core/commands';
 import { serializeProject } from '../../src/core/persistence';
 import type { Project, Scenario } from '../../src/core/domain/types';
+import type { RunReport } from '../../src/core/scenario';
 import { feedback, scenario, selfhold, supply, topology, cascade } from '../fixtures/scenarios/build';
 const entry = resolve('dist/cli/index.js');
 const operations = JSON.parse(readFileSync('design/contracts/examples/build-selfhold.operations.json', 'utf8'));
@@ -71,6 +72,19 @@ it('new→29 shared additions→inspect→validate→simulate/verify; exact defa
  expect(first.result.runOutcome).toBe('completed');expect(first.result.finalTimeMs).toBe(50);
  expect(cli(['verify','wired','--scenario','scenario']).result.verificationOutcome).toBe('passed');
  const saved=readFileSync(join(dir,'wired'),'utf8');expect(saved).not.toContain('runOutcome');expect(saved).not.toContain('trace');
+ const trace: RunReport['trace'] = first.result.trace;
+ const entries = trace.entries.map(({ atMs, observations }) => {
+   const relay = observations.find(o => o.target.kind === 'device' && o.target.id === 'device_relay' && o.observable === 'energized')?.value;
+   const lamp = observations.find(o => o.target.kind === 'instance' && o.target.id === 'instance_lamp' && o.observable === 'lit')?.value;
+   return { atMs, relayEnergized: relay?.quality === 'known' ? relay.value : undefined, lampLit: lamp?.quality === 'known' ? lamp.value : undefined };
+ });
+ expect({ complete: trace.complete, entries }).toEqual({ complete: true, entries: [
+   { atMs: 0, relayEnergized: false, lampLit: false },
+   { atMs: 10, relayEnergized: true, lampLit: true },
+   { atMs: 20, relayEnergized: true, lampLit: true },
+   { atMs: 30, relayEnergized: false, lampLit: false },
+   { atMs: 40, relayEnergized: false, lampLit: false },
+ ] });
 });
 it('rename/hide uses stable bindings; semantic no-op summaries and dry-run never claim persistence',()=>{
  const p=build(); const before=readFileSync(join(dir,'wired'),'utf8'); const relay=p.devices.find(d=>d.kind==='relay')!; const i=p.sheets[0]!.instances.find(i=>i.deviceId===relay.id)!;
