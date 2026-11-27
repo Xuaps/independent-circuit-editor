@@ -169,6 +169,10 @@ export function App({ client: supplied }: { client?: EditorClient }) {
         <nav className="canvas-tools" aria-label="Drawing tools">
           <button aria-pressed={tool === 'select'} onClick={cancel}>Select / Cancel (Escape)</button>
           <button aria-pressed={tool === 'wire'} disabled={view.mode !== 'Editing'} onClick={() => { setTool('wire'); setWireStart(null); setNotice('Wire tool: choose two explicit terminals. Escape cancels.'); }}>Wire (W)</button>
+          {view.mode === 'Editing' && getDefinition(tool) && <>
+            <button disabled={fileBusy} onClick={() => setPlacementRotation(r => rotateQuarterTurn(r, -90))}>Rotate preview left</button>
+            <button disabled={fileBusy} onClick={() => setPlacementRotation(r => rotateQuarterTurn(r, 90))}>Rotate preview right</button>
+          </>}
           <span className="tool-divider"/>
           <button onClick={() => setViewport(v => ({ ...v, width: Math.max(100, v.width / 1.25), height: Math.max(80, v.height / 1.25) }))}>Zoom in</button>
           <button onClick={() => setViewport(v => ({ ...v, width: Math.min(2000000, v.width * 1.25), height: Math.min(1600000, v.height * 1.25) }))}>Zoom out</button>

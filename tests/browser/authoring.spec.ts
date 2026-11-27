@@ -144,6 +144,53 @@ test('selection rotation commits during repeated placement without rotating the 
   expect(await rotationOfSecond()).toBe(270);
 });
 
+test('preview rotation applies only to the next symbol during repeated placement', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await open(page);
+  const left = page.getByRole('button', { name: 'Rotate preview left', exact: true });
+  const right = page.getByRole('button', { name: 'Rotate preview right', exact: true });
+  const previewActions = left.or(right);
+  await expect(previewActions).toHaveCount(0);
+
+  const first = await place(page, 'Lamp', 200, 200);
+  const before = await graph(page);
+  expect(before.sheets[0]!.instances).toEqual([first]);
+  expect(first.transform.rotation).toBe(0);
+  const lampTool = page.getByRole('button', { name: 'Lamp', exact: true });
+  const firstObject = page.getByRole('button', { name: 'H1 · Lamp', exact: true });
+  async function expectPreview(rotation: number) {
+    await expect(lampTool).toHaveAttribute('aria-pressed', 'true');
+    await expect(firstObject).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText(`Tool: Lamp · ${rotation}° · Selected 1`, { exact: true })).toBeVisible();
+    expect(await graph(page)).toEqual(before);
+  }
+  await expectPreview(0);
+  await expect(previewActions, 'Both preview rotation controls after placing the first Lamp with placement active and H1 selected').toHaveCount(2);
+  for (const [action, rotation] of [[left, 270], [right, 0], [left, 270]] as const) {
+    await action.click();
+    await expectPreview(rotation);
+  }
+
+  await advanced(page);
+  await page.getByLabel('Cursor X', { exact: true }).fill('400');
+  await page.getByRole('button', { name: 'Place at coordinates', exact: true }).click();
+  await expect.poll(async () => (await graph(page)).revision).toBe(before.revision + 1);
+  const instances = (await graph(page)).sheets[0]!.instances;
+  expect(instances).toHaveLength(2);
+  expect(instances.find(i => i.id === first.id)).toEqual(first);
+  expect(instances.find(i => i.id !== first.id)).toMatchObject({
+    definition: first.definition, transform: { position: { x: 400, y: 200 }, rotation: 270, mirrorX: false },
+  });
+
+  await page.getByRole('button', { name: /^Undo \(/ }).click();
+  const undone = { ...before, revision: before.revision + 2 };
+  await expect.poll(() => graph(page)).toEqual(undone);
+  await page.getByRole('img', { name: 'Circuit drawing canvas' }).press('Escape');
+  await expect(page.getByRole('button', { name: 'Select / Cancel (Escape)', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(previewActions).toHaveCount(0);
+  expect(await graph(page)).toEqual(undone);
+});
+
 test('wired selection rotation preserves named endpoints, undoes atomically and refuses mixed selection', async ({ page }) => {
   await open(page);
   const source = await place(page, 'DC source', 200, 300), lamp = await place(page, 'Lamp', 600, 300);
