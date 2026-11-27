@@ -2,6 +2,8 @@ name: CI and Pages delivery
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
   workflow_dispatch:
@@ -21,7 +23,8 @@ permissions:
 
 concurrency:
   group: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) && 'pages-delivery' || format('ci-{0}-{1}', github.event_name, github.ref) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Keep pending deliveries instead of replacing them when merges arrive close together.
+  queue: max
 
 env:
   NODE_VERSION: 22.23.5

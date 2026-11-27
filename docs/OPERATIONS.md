@@ -4,11 +4,18 @@
 
 The delivery workflow has three permission boundaries:
 
-1. **Verify:** pull requests and `main` run with read-only repository access. The job installs from `package-lock.json`, runs static checks and tests, builds once, validates the built CLI and browser application, generates `dist/ui/build-manifest.json`, and records the final manifest's SHA-256 immediately before packaging.
+1. **Verify:** pull requests, merge groups, and `main` run with read-only repository access. The job installs from `package-lock.json`, runs static checks and tests, builds once, validates the built CLI and browser application, generates `dist/ui/build-manifest.json`, and records the final manifest's SHA-256 immediately before packaging.
 2. **Deploy:** every green push to `main`, or an explicitly dispatched deployment, receives GitHub Pages OIDC and Pages write permissions. It uploads only `dist/ui/`; ordinary `main` delivery has no manual approval step in this workflow.
 3. **Hosted smoke:** a separate read-only job opens the deployed URL in Chromium, checks the application shell, sample file, service worker, notices, and browser console, authenticates the raw `build-manifest.json` bytes against the digest recorded by the verify job before parsing them, confirms that the manifest names the exact verified revision, and downloads every listed file to verify its exact byte count and SHA-256 digest.
 
-All Pages-capable workflow runs share one concurrency group from verification through hosted smoke, so a `main` delivery and a dispatched rollback cannot deploy or smoke-test concurrently. Pull-request validation uses separate per-ref concurrency and cannot publish or block a release.
+All Pages-capable runs share one concurrency group from verification through hosted smoke: two `main` deliveries, or a delivery and an authorized rollback, cannot deploy or smoke-test concurrently. Actions holds up to 100 pending runs per group instead of replacing the previous pending run. Inspect the run result for any cancellation; queue order is by arrival at the concurrency group, not a guarantee of push order. Pull-request and merge-group checks use separate concurrency groups and cannot publish.
+
+## Integrate through the merge queue
+
+1. Prepare your scoped change on its own branch and worktree. Complete the applicable local checks and independent review for the exact diff.
+2. Open a pull request to `main`. The required check is **Verify exact source and build** from GitHub Actions. After it passes, add the reviewed PR to the merge queue rather than pushing directly to `main`.
+3. GitHub reruns that Verify check on the queued combination. A failed check prevents the merge. Verify the queued result in Actions; Deploy and hosted smoke are post-merge jobs, not required PR checks.
+4. The resulting push to `main` automatically verifies and deploys the published revision, runs hosted smoke, and records release evidence in Actions. There is no separate deployment promotion or sign-off.
 
 ## Rollback
 
