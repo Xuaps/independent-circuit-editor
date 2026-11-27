@@ -1,4 +1,5 @@
 import { spawn, spawnSync, type SpawnSyncOptionsWithStringEncoding } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync, symlinkSync, linkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -132,6 +133,9 @@ it('checked-in sample is the CLI-built shared-command result, with truthful new 
  const p=build();const sample=JSON.parse(readFileSync(resolve('examples/p0/selfhold.circuit.json'),'utf8'));expect(sample).toEqual(p);
  put('sample',sample);put('sample-scenario',JSON.parse(readFileSync(resolve('examples/p0/start-stop.scenario.json'),'utf8')));cli(['verify','sample','--scenario','sample-scenario']);
  expect(JSON.parse(readFileSync(resolve('examples/p0/build-selfhold.operations.json'),'utf8'))).toEqual(operations);
+ // Raw wired bytes captured from the v1 Core CLI at 015d4c0b, not the pretty-printed sample.
+ expect(createHash('sha256').update(readFileSync(join(dir,'wired'))).digest('hex'))
+  .toBe('42b6663816eb260db19286b1d60a66cdf1ddcd34394211ebd3c0025d5e0b2842');
 });
 it('shared new identity validation, original extension indifference, scenario syntax, stdin conflict and inert requests',()=>{
  for(const extra of [['--project-id','bad id'],['--project-id','same','--sheet-id','same'],['--sheet-id','0invalid']])cli(['new','--output','new',...extra],2);
