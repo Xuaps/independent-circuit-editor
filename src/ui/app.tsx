@@ -106,6 +106,7 @@ export function App({ client: supplied }: { client?: EditorClient }) {
   function startDrag(event: ReactPointerEvent<SVGGElement>, instance: Instance) {
     if (view.mode !== 'Editing' || tool !== 'select') return;
     event.preventDefault(); event.stopPropagation(); select(instance.id, event.shiftKey);
+    if (event.button === 0) svg.current?.focus({ preventScroll: true });
     if (event.shiftKey) return;
     drag.current = { id: instance.id, pointerId: event.pointerId, start: world(event), original: instance.transform.position };
     svg.current?.setPointerCapture(event.pointerId);

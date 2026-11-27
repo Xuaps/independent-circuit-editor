@@ -1,9 +1,9 @@
-import { advanced, reveal } from './helpers/authoring';
+import { advanced, moreFiles, reveal } from './helpers/authoring';
 import { graph, open, place, connect, node, bind, observeBrowser } from './helpers/authoring';
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, errors, type Page } from '@playwright/test';
 import type { Project } from '../../src/core/domain/types';
 import { build } from 'esbuild';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -219,6 +219,80 @@ test('pointer coordinates under zoom/pan, drag, terminal click, detach/delete an
   page.once('dialog', d => d.accept()); await page.getByRole('button', { name: 'Delete selection', exact: true }).click();
   await expect.poll(async () => (await graph(page)).sheets[0]!.instances.length).toBe(1); expect((await graph(page)).sheets[0]!.wires[0]!.to.kind).toBe('dangling');
   await page.getByRole('button', { name: /^Undo \(/ }).click(); expect((await graph(page)).sheets[0]).toEqual(beforeCancel.sheets[0]);
+  expect(browser.errors).toEqual([]); expect(browser.external).toEqual([]);
+});
+
+test('Delete after clicking the wired H1 lamp detaches only its wire ends and Undo restores them', async ({ page }) => {
+  const browser = observeBrowser(page);
+  await open(page);
+  const blank = await graph(page);
+  expect(blank).toMatchObject({ title: 'Untitled circuit', revision: 0, devices: [], sheets: [{ instances: [], wires: [], junctions: [], annotations: [] }] });
+  await moreFiles(page);
+  const discardBlank = page.waitForEvent('dialog', { timeout: 5000 }).then(async dialog => {
+    const expected = dialog.type() === 'prompt' && dialog.defaultValue() === 'Cancel' && dialog.message().startsWith('Unsaved or unconfirmed work.');
+    if (!expected) await dialog.dismiss();
+    expect(expected, 'the app must ask before replacing the verified blank').toBe(true);
+    await dialog.accept('Discard');
+  });
+  await Promise.all([discardBlank, page.getByRole('button', { name: 'Load example', exact: true }).click()]);
+  const before: Project = JSON.parse(await readFile(new URL('../../public/selfhold.circuit.json', import.meta.url), 'utf8'));
+  await expect.poll(() => graph(page)).toEqual(before);
+
+  const sheet = before.sheets[0]!;
+  const lamp = sheet.instances.find(i => i.id === 'instance_lamp')!;
+  const canvas = page.getByRole('img', { name: 'Circuit drawing canvas' });
+  const symbol = canvas.locator(`g[data-instance="${lamp.id}"]`);
+  const fit = page.getByRole('button', { name: 'Fit circuit', exact: true });
+  await fit.click();
+  await expect(fit).toBeFocused();
+  await symbol.locator('.design-glyph > path:not([data-lead])').click({ button: 'left' });
+  await expect(symbol).toHaveClass('selected');
+  await expect(page.getByText('Tool: select · Selected 1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'H1 · Pilot lamp', exact: true })).toBeVisible();
+  expect(await graph(page)).toEqual(before);
+  const focus = await canvas.evaluate(svg => {
+    const active = document.activeElement;
+    return { inCanvas: svg.contains(active), name: active?.tagName === 'BUTTON' ? active.textContent?.trim() : active?.getAttribute('aria-label') ?? active?.tagName };
+  });
+
+  const confirmation = { type: 'confirm', message: 'Remove selected objects? Incident wire ends will become explicitly dangling. Devices are removed only when selected in the device list.' };
+  async function pressDelete(accept: boolean) {
+    const response = page.waitForEvent('dialog', { timeout: 2000 }).then(async dialog => {
+      const actual = { type: dialog.type(), message: dialog.message() };
+      if (accept && actual.type === confirmation.type && actual.message === confirmation.message) await dialog.accept();
+      else await dialog.dismiss();
+      return actual;
+    }, error => {
+      if (!(error instanceof errors.TimeoutError)) throw error;
+      return null;
+    });
+    const [actual] = await Promise.all([response, page.keyboard.press('Delete')]);
+    if (actual === null) {
+      await expect(symbol).toHaveClass('selected');
+      expect(await graph(page)).toEqual(before);
+      expect(browser.errors).toEqual([]); expect(browser.external).toEqual([]);
+    }
+    expect(actual, `Delete confirmation after the H1 click (active element: ${focus.name}; no dialog leaves H1 selected and graph unchanged)`).toEqual(confirmation);
+  }
+
+  // Dismiss the first confirmation to prove the key alone cannot mutate the design.
+  await pressDelete(false);
+  expect(focus.inCanvas).toBe(true);
+  expect(await graph(page)).toEqual(before);
+  await pressDelete(true);
+  await expect.poll(() => graph(page)).toEqual({
+    ...before, revision: before.revision + 1, sheets: [{
+      ...sheet, instances: sheet.instances.filter(i => i.id !== lamp.id), wires: sheet.wires.map(wire => {
+        if (wire.id === 'wire_lamp_return') return { ...wire, from: { kind: 'dangling', position: oracle.portPosition(lamp, 'p2')! } };
+        if (wire.id === 'wire_pilot_output') return { ...wire, to: { kind: 'dangling', position: oracle.portPosition(lamp, 'p1')! } };
+        return wire;
+      }),
+    }],
+  });
+  await expect(symbol).toHaveCount(0);
+  await page.getByRole('button', { name: /^Undo \(/ }).click();
+  await expect.poll(() => graph(page)).toEqual({ ...before, revision: before.revision + 2 });
+  await expect(symbol).toBeVisible();
   expect(browser.errors).toEqual([]); expect(browser.external).toEqual([]);
 });
 
