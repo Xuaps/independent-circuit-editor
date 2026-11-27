@@ -15,6 +15,8 @@ import './styles/editor.css';
 
 const titles: Record<string, string> = { 'core.dc.supply': 'DC source', 'core.pushbutton.no': 'NO pushbutton', 'core.pushbutton.nc': 'NC pushbutton (Stop)', 'core.relay.coil': 'Relay coil', 'core.relay.contact.no': 'Relay NO contact', 'core.relay.contact.nc': 'Relay NC contact', 'core.lamp': 'Lamp' };
 const snap = (n: number) => Math.max(-999900, Math.min(999900, Math.round(n / 10) * 10));
+type QuarterTurn = -90 | 90;
+const rotateQuarterTurn = (rotation: Transform['rotation'], delta: QuarterTurn) => ((rotation + delta + 360) % 360) as Transform['rotation'];
 const keyOf = (e: Endpoint) => e.kind === 'port' ? `${e.instanceId}/${e.portId}` : e.kind === 'junction' ? e.junctionId : `dangling:${e.position.x},${e.position.y}`;
 function number(data: FormData, key: string) { return Number(data.get(key)); }
 function form(event: FormEvent<HTMLFormElement>) { event.preventDefault(); return new FormData(event.currentTarget); }
@@ -77,16 +79,19 @@ export function App({ client: supplied }: { client?: EditorClient }) {
     if (!wireStart) { setWireStart(endpoint); setTool('wire'); setNotice('Wire start selected. Choose another explicit terminal/junction or a dangling point.'); }
     else { void send({ kind: 'wire', from: wireStart, to: endpoint }).then(ok => { if (ok) { setWireStart(null); setTool('wire'); } }); }
   }
-  function transform(rotation = false, mirror = false, delta?: Point) {
-    if (getDefinition(tool) && !delta) {
-      if (rotation) setPlacementRotation(r => ((r + 90) % 360) as Transform['rotation']);
-      if (mirror) setPlacementMirror(m => !m);
-      return;
-    }
+  function transformSelection({ rotationDelta, mirror = false, positionDelta }: { rotationDelta?: QuarterTurn; mirror?: boolean; positionDelta?: Point }) {
     if (!selection.length || selection.some(id => !sheet.instances.some(i => i.id === id))) { setNotice('Normal transforms support symbol-only selections. Use explicit Replace junction for junction relocation; annotations cannot move.'); return; }
     const transforms: Record<string, Transform> = Object.create(null) as Record<string, Transform>;
-    for (const i of sheet.instances.filter(i => selection.includes(i.id))) transforms[i.id] = { position: delta ? { x: i.transform.position.x + delta.x, y: i.transform.position.y + delta.y } : i.transform.position, rotation: rotation ? ((i.transform.rotation + 90) % 360) as Transform['rotation'] : i.transform.rotation, mirrorX: mirror ? !i.transform.mirrorX : i.transform.mirrorX };
+    for (const i of sheet.instances.filter(i => selection.includes(i.id))) transforms[i.id] = {
+      position: positionDelta ? { x: i.transform.position.x + positionDelta.x, y: i.transform.position.y + positionDelta.y } : i.transform.position,
+      rotation: rotationDelta === undefined ? i.transform.rotation : rotateQuarterTurn(i.transform.rotation, rotationDelta),
+      mirrorX: mirror ? !i.transform.mirrorX : i.transform.mirrorX,
+    };
     void send({ kind: 'transform', transforms });
+  }
+  function mirrorX() {
+    if (getDefinition(tool)) setPlacementMirror(m => !m);
+    else transformSelection({ mirror: true });
   }
   function remove() {
     if (!selection.length) return;
@@ -128,7 +133,11 @@ export function App({ client: supplied }: { client?: EditorClient }) {
     if (event.key === 'Escape') { event.preventDefault(); cancel(); }
     else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); void send({ kind: event.shiftKey ? 'redo' : 'undo' }); }
     else if (target.closest('[data-canvas]')) {
-      if (event.key.toLowerCase() === 'r') { event.preventDefault(); transform(true); }
+      if (event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        if (getDefinition(tool)) setPlacementRotation(r => rotateQuarterTurn(r, 90));
+        else transformSelection({ rotationDelta: 90 });
+      }
       else if (event.key === 'Delete') { event.preventDefault(); remove(); }
       else if (event.key.toLowerCase() === 'v') cancel();
       else if (event.key.toLowerCase() === 'w') { setTool('wire'); setNotice('Choose a terminal using the terminal list or canvas.'); }
@@ -208,7 +217,11 @@ export function App({ client: supplied }: { client?: EditorClient }) {
         </section>}
         </details><details><summary>Page dimensions</summary><form onSubmit={e => { const d = form(e); void send({ kind: 'apply', operations: [{ op: 'page.replace', sheetId: sheet.id, page: { width: number(d, 'width'), height: number(d, 'height'), unit: 'du' } }] }); }}><label>Page width<input name="width" type="number" defaultValue={sheet.page.width}/></label><label>Page height<input name="height" type="number" defaultValue={sheet.page.height}/></label><button>Apply page</button></form></details>
 
-        {selection.length > 0 && <fieldset className="selection-actions" disabled={view.mode !== 'Editing'}><button onClick={() => transform(true)}>Rotate 90° (R)</button><button onClick={() => transform(false, true)}>Mirror X</button><button disabled={!selection.length} onClick={() => void send({ kind: 'copy', ids: selection })}>Duplicate independent</button><button disabled={!selection.length} onClick={remove}>Delete selection</button></fieldset>}
+        {selection.length > 0 && <fieldset className="selection-actions" disabled={view.mode !== 'Editing'}>
+          <button onClick={() => transformSelection({ rotationDelta: -90 })}>Rotate left 90°</button>
+          <button onClick={() => transformSelection({ rotationDelta: 90 })}>Rotate right 90°</button>
+          <button onClick={mirrorX}>Mirror X</button><button disabled={!selection.length} onClick={() => void send({ kind: 'copy', ids: selection })}>Duplicate independent</button><button disabled={!selection.length} onClick={remove}>Delete selection</button>
+        </fieldset>}
         </fieldset>
         <details className="advanced-workspace"><summary>Advanced workspace</summary>
           <h3>Exact placement</h3>
@@ -216,9 +229,9 @@ export function App({ client: supplied }: { client?: EditorClient }) {
 
           <div className="pan-controls" aria-label="Pan controls">{(['left', 'right', 'up', 'down'] as const).map(dir => <button key={dir} onClick={() => setViewport(v => ({ ...v, x: v.x + (dir === 'left' ? -100 : dir === 'right' ? 100 : 0), y: v.y + (dir === 'up' ? -100 : dir === 'down' ? 100 : 0) }))}>Pan {dir}</button>)}</div>
           <button onClick={() => setViewport({ x: -40, y: -40, width: sheet.page.width + 80, height: sheet.page.height + 80 })}>Fit page</button>
-          <fieldset disabled={view.mode !== 'Editing'}><button onClick={() => transform(false, false, { x: 10, y: 0 })}>Move right 10</button></fieldset>
+          <fieldset disabled={view.mode !== 'Editing'}><button onClick={() => transformSelection({ positionDelta: { x: 10, y: 0 } })}>Move right 10</button></fieldset>
           <details><summary>History and project data</summary><p>History trimmed: {view.history.trimmed}</p><button onClick={() => setInspect(!inspect)}>Inspect project JSON</button>{inspect && <pre data-testid="project-json">{client.inspect()}</pre>}</details>
-          <details><summary>Keyboard and scope</summary><p>Canvas V/W/R, arrows/Enter and Escape; Ctrl/Cmd+Z / Shift+Z. Run: hold drawn pushbuttons with pointer, Space or Enter. Ports never actuate. Only applied forms are saved. Editing strokes are not potentials; Run uses the dedicated worker. Independent IEC-style glyphs, not standards certification.</p></details>
+          <details><summary>Keyboard and scope</summary><p>Canvas V/W, arrows/Enter and Escape; Ctrl/Cmd+Z / Shift+Z. Canvas R rotates the placement preview clockwise while placing a part; otherwise it rotates selected symbols clockwise. Run: hold drawn pushbuttons with pointer, Space or Enter. Ports never actuate. Only applied forms are saved. Editing strokes are not potentials; Run uses the dedicated worker. Independent IEC-style glyphs, not standards certification.</p></details>
         </details>
         <details className="diagnostics" open={issues.length > 0}><summary>Diagnostics / preflight ({issues.length + preflight.length})</summary>{issues.map((d, n) => <p role="alert" key={n}><button onClick={() => setSelection([...d.objectIds])}>{d.code}: {d.message} {d.objectIds.join(', ')}</button></p>)}<p>No electrical solve in preflight.</p>{preflight.map((d, n) => <p key={n}><button onClick={() => setSelection([...d.objectIds])}>{d.code}: {d.message} {d.objectIds.join(', ')}</button></p>)}</details>
       </aside>

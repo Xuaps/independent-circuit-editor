@@ -109,6 +109,89 @@ test('real focus/key authoring, native property typing, rejected edits and escap
   expect(browser.errors).toEqual([]); expect(browser.external).toEqual([]);
 });
 
+test('selection rotation commits during repeated placement without rotating the preview', async ({ page }) => {
+  await open(page);
+  const first = await place(page, 'Lamp', 200, 200);
+  await advanced(page);
+  await page.getByLabel('Cursor X', { exact: true }).fill('400');
+  await page.getByRole('button', { name: 'Place at coordinates', exact: true }).click();
+  await expect.poll(async () => (await graph(page)).sheets[0]!.instances.length).toBe(2);
+  const before = await graph(page), second = before.sheets[0]!.instances.find(i => i.id !== first.id)!;
+  const lampTool = page.getByRole('button', { name: 'Lamp', exact: true });
+  const rotationOfSecond = async () => (await graph(page)).sheets[0]!.instances.find(i => i.id === second.id)!.transform.rotation;
+
+  await page.getByRole('button', { name: 'Rotate right 90°', exact: true }).click();
+  await expect.poll(rotationOfSecond).toBe(90);
+  expect((await graph(page)).revision).toBe(before.revision + 1);
+  await expect(lampTool).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Tool: Lamp · 0° · Selected 1', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Undo \(/ }).click();
+  await expect.poll(() => graph(page)).toEqual({ ...before, revision: before.revision + 2 });
+  await page.getByRole('button', { name: 'Rotate left 90°', exact: true }).click();
+  await expect.poll(rotationOfSecond).toBe(270);
+  await expect(lampTool).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Tool: Lamp · 0° · Selected 1', { exact: true })).toBeVisible();
+
+  const beforePreviewRotation = await graph(page);
+  const canvas = page.getByRole('img', { name: 'Circuit drawing canvas' });
+  await canvas.press('r');
+  await expect(page.getByText('Tool: Lamp · 90° · Selected 1', { exact: true })).toBeVisible();
+  expect(await graph(page)).toEqual(beforePreviewRotation);
+  await page.getByLabel('Cursor X', { exact: true }).fill('600');
+  await page.getByRole('button', { name: 'Place at coordinates', exact: true }).click();
+  await expect.poll(async () => (await graph(page)).sheets[0]!.instances.find(i => i.transform.position.x === 600)?.transform.rotation).toBe(90);
+  expect(await rotationOfSecond()).toBe(270);
+});
+
+test('wired selection rotation preserves named endpoints, undoes atomically and refuses mixed selection', async ({ page }) => {
+  await open(page);
+  const source = await place(page, 'DC source', 200, 300), lamp = await place(page, 'Lamp', 600, 300);
+  await connect(page, `${source.id}/plus`, `${lamp.id}/p1`);
+  await connect(page, `${lamp.id}/p2`, `${source.id}/minus`);
+  await page.getByRole('button', { name: 'H1 · Lamp', exact: true }).click();
+  const before = await graph(page);
+  const rotateLeft = page.getByRole('button', { name: 'Rotate left 90°', exact: true });
+  const rotateRight = page.getByRole('button', { name: 'Rotate right 90°', exact: true });
+  await rotateLeft.click();
+  await expect.poll(async () => (await graph(page)).revision).toBe(before.revision + 1);
+  const after = await graph(page), rotated = after.sheets[0]!.instances.find(i => i.id === lamp.id)!;
+  expect(rotated.transform).toEqual({ ...lamp.transform, rotation: 270 });
+  const connectivity = (project: Project) => project.sheets[0]!.wires.map(({ id, from, to }) => ({ id, from, to }));
+  expect(connectivity(after)).toEqual(connectivity(before));
+  for (const [port, supplyPort] of [['p1', 'plus'], ['p2', 'minus']] as const) {
+    const lampPoint = oracle.portPosition(rotated, port)!;
+    expect(lampPoint).not.toEqual(oracle.portPosition(lamp, port));
+    const terminal = page.locator(`[data-port="${lamp.id}/${port}"]`);
+    await expect(terminal).toHaveAttribute('cx', String(lampPoint.x));
+    await expect(terminal).toHaveAttribute('cy', String(lampPoint.y));
+    const wire = after.sheets[0]!.wires.find(w => [w.from, w.to].some(e => e.kind === 'port' && e.instanceId === lamp.id && e.portId === port))!;
+    const svgRoute = page.locator(`[data-wire="${wire.id}"] polyline`);
+    const supplyPoint = oracle.portPosition(source, supplyPort)!;
+    const [from, to] = port === 'p1' ? [supplyPoint, lampPoint] : [lampPoint, supplyPoint];
+    await expect(svgRoute).toHaveAttribute('points', new RegExp(`^${from.x},${from.y}(?: \\S+)* ${to.x},${to.y}$`));
+  }
+  await page.getByRole('button', { name: /^Undo \(/ }).click();
+  const undone = { ...before, revision: before.revision + 2 };
+  await expect.poll(() => graph(page)).toEqual(undone);
+
+  const selectWire = page.getByRole('checkbox', { name: 'Select Wire 1', exact: true });
+  await selectWire.check();
+  await rotateRight.click();
+  await expect(page.getByRole('status')).toContainText('Normal transforms support symbol-only selections.');
+  expect(await graph(page)).toEqual(undone);
+
+  await selectWire.uncheck();
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Simulation — Running' })).toBeVisible();
+  await expect(rotateLeft).toBeDisabled();
+  await expect(rotateRight).toBeDisabled();
+  expect(await graph(page)).toEqual(undone);
+  await page.getByRole('button', { name: 'Stop simulation', exact: true }).click();
+  await expect(rotateLeft).toBeEnabled();
+  await expect(rotateRight).toBeEnabled();
+});
+
 test('pointer coordinates under zoom/pan, drag, terminal click, detach/delete and history', async ({ page }) => {
   const browser = observeBrowser(page); await open(page);
   const canvas = page.getByRole('img', { name: 'Circuit drawing canvas' });
