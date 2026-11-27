@@ -178,8 +178,39 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run hosted smoke
+        id: hosted_suite
         run: npx playwright test --config=playwright.hosted.config.ts
         env:
           HOSTED_BASE_URL: ${{ needs.deploy.outputs.page_url }}
           EXPECTED_SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
           EXPECTED_MANIFEST_SHA: ${{ needs.verify.outputs.manifest_sha }}
+
+      # The test remains a hard gate; skipped jobs are reported by the Actions graph.
+      - name: Summarize hosted smoke
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          VERIFIED_SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
+          VERIFIED_MANIFEST_SHA: ${{ needs.verify.outputs.manifest_sha }}
+          HOSTED_SMOKE_OUTCOME: ${{ steps.hosted_suite.outcome }}
+          HOSTED_JOB_STATUS: ${{ job.status }}
+        run: |
+          source=unavailable
+          manifest=unavailable
+          if [[ ${VERIFIED_SOURCE_SHA:-} =~ ^[0-9a-f]{40}$ ]]; then source=$VERIFIED_SOURCE_SHA; fi
+          if [[ ${VERIFIED_MANIFEST_SHA:-} =~ ^[0-9a-f]{64}$ ]]; then manifest=$VERIFIED_MANIFEST_SHA; fi
+          case ${HOSTED_SMOKE_OUTCOME:-} in
+            success|failure|cancelled) smoke=$HOSTED_SMOKE_OUTCOME ;;
+            *) smoke='not run' ;;
+          esac
+          case ${HOSTED_JOB_STATUS:-} in
+            success|failure|cancelled) job=$HOSTED_JOB_STATUS ;;
+            *) job=unavailable ;;
+          esac
+          {
+            printf '### Hosted smoke\n\n'
+            printf -- '- Verified source: `%s`\n' "$source"
+            printf -- '- Build manifest SHA-256: `%s`\n' "$manifest"
+            printf -- '- hosted artifact, editor startup and bundled circuit round trip: **%s**\n' "$smoke"
+            printf -- '- Hosted job status before summary: **%s**\n' "$job"
+          } >> "$GITHUB_STEP_SUMMARY"
