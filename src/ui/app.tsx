@@ -148,11 +148,12 @@ export function App({ client: supplied }: { client?: EditorClient }) {
   }}>
     <header className="project-bar">
       <div className="project-identity"><h1>Independent Circuit Editor</h1><strong>{project.title}</strong><p data-testid="design-status">{view.dirty ? 'Unsaved changes' : 'Content baseline unchanged'} · revision {project.revision}</p></div>
+      <nav className="section-links" aria-label="Editor sections"><a href="#build">Build</a><a href="#drawing">Drawing</a><a href="#inspector">Inspector</a></nav>
       <FilePanel client={client} lock={setFileBusy} replaced={() => { cancel(); setSelection([]); setIssues([]); setViewport(circuitViewport(client.getSnapshot().design)); }}/>
       <SimulationControls client={client} view={view} busy={fileBusy} actuation={actuation}/>
     </header>
     <div className="workspace authoring" inert={fileBusy}>
-      <aside className="palette-panel" aria-label="Palette and objects"><fieldset disabled={view.mode !== 'Editing'}><h2>Build</h2><p className="muted">Click a part → place repeatedly</p>
+      <aside id="build" className="palette-panel" aria-label="Palette and objects" tabIndex={-1}><fieldset disabled={view.mode !== 'Editing'}><h2>Build</h2><p className="muted">Click a part → place repeatedly</p>
         <details className="palette-search"><summary>Find a part</summary><label>Search definitions<input value={search} onChange={e => setSearch(e.target.value)}/></label></details>
         <div className="palette">{definitions.filter(d => `${titles[d.id]} ${d.id}`.toLowerCase().includes(search.toLowerCase())).map(d => <button key={d.id} aria-pressed={tool === d.id} onClick={() => { setTool(d.id); setWireStart(null); setPlacementRotation(0); setPlacementMirror(false); setNotice(`Place ${titles[d.id]}. Pointer or coordinates; Escape cancels.`); }}><svg viewBox="-36 -36 72 72" aria-hidden="true"><Glyph instance={{ definition: { id: d.id, version: 1 } }}/></svg><span>{titles[d.id]}</span></button>)}</div>
         <button aria-pressed={tool === 'junction'} onClick={() => setTool('junction')}>Junction tool</button><button aria-pressed={tool === 'text'} onClick={() => setTool('text')}>Text tool</button>
@@ -165,7 +166,7 @@ export function App({ client: supplied }: { client?: EditorClient }) {
         <details><summary>Shared devices</summary><h2>Devices</h2><ul className="objects">{project.devices.map(d => <li key={d.id}><button onClick={() => setSelection(sheet.instances.filter(i => i.deviceId === d.id).map(i => i.id))}>Linked symbols for {d.name}</button><button onClick={() => setSelection([d.id])}>Device {d.name}</button></li>)}</ul></details></section>
 
       </fieldset></aside>
-      <section className="drawing" aria-label="Drawing workspace">
+      <section id="drawing" className="drawing" aria-label="Drawing workspace" tabIndex={-1}>
         <nav className="canvas-tools" aria-label="Drawing tools">
           <button aria-pressed={tool === 'select'} onClick={cancel}>Select / Cancel (Escape)</button>
           <button aria-pressed={tool === 'wire'} disabled={view.mode !== 'Editing'} onClick={() => { setTool('wire'); setWireStart(null); setNotice('Wire tool: choose two explicit terminals. Escape cancels.'); }}>Wire (W)</button>
@@ -198,10 +199,10 @@ export function App({ client: supplied }: { client?: EditorClient }) {
           {tool !== 'select' && <g pointerEvents="none" opacity=".65">{getDefinition(tool) && <g transform={`translate(${position.x} ${position.y}) rotate(${placementRotation}) scale(${placementMirror ? -1 : 1} 1)`}><Glyph instance={{ definition: { id: tool, version: 1 } }}/></g>}<circle cx={position.x} cy={position.y} r="12" fill="none" stroke="#005ca5"/><path d={`M ${position.x - 18} ${position.y} H ${position.x + 18} M ${position.x} ${position.y - 18} V ${position.y + 18}`} stroke="#005ca5"/>{wireStart && (() => { const a = endpointPosition(sheet, wireStart); return a && <polyline points={`${a.x},${a.y} ${position.x},${a.y} ${position.x},${position.y}`} fill="none" stroke="#005ca5" strokeDasharray="5 3"/>; })()}</g>}
         </svg>
 
-        {!sheet.instances.length && !sheet.annotations.length && !sheet.wires.length && !sheet.junctions.length && <div className="blank-canvas"><strong>Your circuit starts here</strong><p>Choose a part on the left.<br/>Place repeatedly; Escape returns to Select.</p><span>Own-format · ideal 24 V DC</span></div>}
+        {!sheet.instances.length && !sheet.annotations.length && !sheet.wires.length && !sheet.junctions.length && <div className="blank-canvas"><strong>Your circuit starts here</strong><p><span>Choose a part in Build.</span><br/>Place repeatedly; Escape returns to Select.</p><span>Own-format · ideal 24 V DC</span></div>}
         <div className="drawing-status"><p role="status">{notice}</p><span>Tool: {titles[tool] ?? tool}{getDefinition(tool) && ` · ${placementRotation}°${placementMirror ? ' mirrored' : ''}`} · Selected {selection.length}</span></div>
       </section>
-      <aside className="inspector-panel" aria-label="Inspector and wiring">
+      <aside id="inspector" className="inspector-panel" aria-label="Inspector and wiring" tabIndex={-1}>
         <SimulationPanel client={client} view={view} select={setSelection} actuation={actuation} missingDcSource={missingDcSource} unassignedRelayContacts={unassignedRelayContacts}/>
         <fieldset disabled={view.mode !== 'Editing'} className="selection-inspector"><h2>Selection inspector</h2>
         {!selection.length && <div className="selection-hint"><h3>Select a symbol</h3><p>Choose a symbol on the drawing or in Objects to edit its label, binding and presentation.</p><p className="muted">Wire from terminal to terminal. Crossings never join automatically.</p></div>}
