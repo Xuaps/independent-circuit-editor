@@ -90,7 +90,28 @@ for (const viewport of phoneViewports) {
     const blankBox = await box(blankGuide);
     expect(blankBox.y, 'the blank guide starts below the wrapped toolbar').toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height);
     await expect(blankGuide.getByText('Choose a part in Build.', { exact: true })).toBeVisible();
-    await expect(blankGuide).not.toContainText(/first use|example/i);
+    const exampleHint = blankGuide.getByText('Or explore a working circuit: More files → Load example.', { exact: true });
+    await expect(exampleHint).toBeVisible();
+    const statusBox = await box(drawing.locator('.drawing-status'));
+    const hintLines = await exampleHint.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return Array.from(range.getClientRects(), ({ left, right, top, bottom }) => ({ left, right, top, bottom }));
+    });
+    await test.info().attach('blank-example-hint-geometry', {
+      body: JSON.stringify({ viewport, blankBox, canvasBox, toolbarBox, statusBox, hintLines }, null, 2),
+      contentType: 'application/json',
+    });
+    expect(hintLines.length, 'the example hint has rendered text').toBeGreaterThan(0);
+    for (const line of hintLines) {
+      expect(line.left, 'hint text starts inside the guide, canvas and viewport').toBeGreaterThanOrEqual(Math.max(0, blankBox.x, canvasBox.x));
+      expect(line.right, 'hint text ends inside the guide, canvas and viewport')
+        .toBeLessThanOrEqual(Math.min(viewport.width, blankBox.x + blankBox.width, canvasBox.x + canvasBox.width));
+      expect(line.top, 'hint text starts inside the canvas row below the toolbar')
+        .toBeGreaterThanOrEqual(Math.max(canvasBox.y, toolbarBox.y + toolbarBox.height));
+      expect(line.bottom, 'hint text ends inside the canvas row above Drawing status')
+        .toBeLessThanOrEqual(Math.min(canvasBox.y + canvasBox.height, statusBox.y));
+    }
     await expect(blankGuide).not.toContainText('Choose a part on the left.');
 
     const files = page.getByRole('group', { name: 'Design files', exact: true });
