@@ -35,6 +35,85 @@ test('blank canvas guide disappears for a junction-only sheet and returns on Und
   await expect(guide).toBeVisible();
 });
 
+test('compact blank Editing guide offers a passive route to Load example until the first placement', async ({ page }) => {
+  const viewport = { width: 1024, height: 768 };
+  await page.setViewportSize(viewport);
+  const exampleRequests: string[] = [];
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/selfhold.circuit.json') exampleRequests.push(request.url());
+  });
+  await open(page);
+
+  const drawing = page.getByRole('region', { name: 'Drawing workspace' });
+  const guide = drawing.locator('.blank-canvas');
+  const title = guide.getByText('Your circuit starts here', { exact: true });
+  const primary = guide.locator('p').filter({ hasText: 'Choose a part in Build.' });
+  const primaryText = 'Choose a part in Build. Place repeatedly; Escape returns to Select.';
+  const scope = guide.getByText('Own-format · ideal 24 V DC', { exact: true });
+  const files = page.getByRole('region', { name: 'Files and recovery' });
+  const moreFilesSummary = files.getByText('More files', { exact: true });
+  const loadExample = moreFilesSummary.locator('..').getByRole('button', { name: 'Load example', exact: true });
+
+  const blank = await test.step('Read the whole blank project and verify the existing Editing guide', async () => {
+    const project = await graph(page);
+    expect(project).toMatchObject({ title: 'Untitled circuit', revision: 0, devices: [], sheets: [{ instances: [], wires: [], junctions: [], annotations: [] }] });
+    await expect(page.getByText('EDIT', { exact: true })).toBeVisible();
+    await expect(title).toBeVisible();
+    await expect(primary).toBeVisible();
+    await expect(primary).toHaveText(primaryText, { useInnerText: true });
+    await expect(scope).toBeVisible();
+    await expect(moreFilesSummary).toBeVisible();
+    await expect(loadExample).toBeHidden();
+    expect(await graph(page)).toEqual(project);
+    expect(exampleRequests).toEqual([]);
+    return project;
+  });
+
+  const hintText = 'Or explore a working circuit: More files → Load example.';
+  const hint = guide.getByText(hintText, { exact: true });
+  await expect(hint, 'Exact passive example hint in the verified blank Editing guide').toBeVisible();
+  await expect(guide.getByRole('link', { includeHidden: true }).or(guide.getByRole('button', { includeHidden: true }))).toHaveCount(0);
+
+  const guideBox = (await guide.boundingBox())!;
+  const primaryBox = (await primary.boundingBox())!;
+  const scopeBox = (await scope.boundingBox())!;
+  const toolsBox = (await drawing.getByRole('navigation', { name: 'Drawing tools' }).boundingBox())!;
+  const statusBox = (await drawing.locator('.drawing-status').boundingBox())!;
+  const textBox = await hint.evaluate(element => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const { x, y, width, height } = range.getBoundingClientRect();
+    return { x, y, width, height };
+  });
+  for (const [label, box] of [['element', (await hint.boundingBox())!], ['text range', textBox]] as const) {
+    expect(box.width, `${label} width`).toBeGreaterThan(0);
+    expect(box.height, `${label} height`).toBeGreaterThan(0);
+    expect(box.x, `${label} left inside guide and viewport`).toBeGreaterThanOrEqual(Math.max(0, guideBox.x));
+    expect(box.x + box.width, `${label} right inside guide and viewport`).toBeLessThanOrEqual(Math.min(viewport.width, guideBox.x + guideBox.width));
+    expect(box.y, `${label} top below primary guide and toolbar`).toBeGreaterThanOrEqual(Math.max(0, guideBox.y, primaryBox.y + primaryBox.height, toolsBox.y + toolsBox.height));
+    expect(box.y + box.height, `${label} bottom above guide scope and status`).toBeLessThanOrEqual(Math.min(viewport.height, guideBox.y + guideBox.height, scopeBox.y, statusBox.y));
+  }
+
+  await moreFiles(page);
+  await expect(loadExample).toBeVisible();
+  await expect(loadExample).toBeEnabled();
+  await expect(title).toBeVisible();
+  await expect(primary).toBeVisible();
+  await expect(primary).toHaveText(primaryText, { useInnerText: true });
+  expect(await graph(page)).toEqual(blank);
+  await moreFilesSummary.click();
+  await expect(loadExample).toBeHidden();
+  expect(await graph(page)).toEqual(blank);
+
+  const contact = await place(page, 'Relay NO contact', 200, 200);
+  expect(contact).toMatchObject({ definition: { id: 'core.relay.contact.no', version: 1 }, deviceId: null, transform: { position: { x: 200, y: 200 }, rotation: 0, mirrorX: false } });
+  await expect(page.getByRole('heading', { name: 'Objects (1 symbols)', exact: true })).toBeVisible();
+  await expect(page.getByText(hintText, { exact: true })).toHaveCount(0);
+  await expect(guide).toHaveCount(0);
+  expect(await graph(page)).toEqual({ ...blank, revision: blank.revision + 1, sheets: [{ ...blank.sheets[0]!, instances: [contact] }] });
+  expect(exampleRequests).toEqual([]);
+});
+
 test('visible blank authoring makes a complete selfhold/lamp graph with deliberate binding and junctions', async ({ page }) => {
   const browser = observeBrowser(page); await open(page);
   expect((await graph(page)).sheets[0]!.instances).toHaveLength(0);
