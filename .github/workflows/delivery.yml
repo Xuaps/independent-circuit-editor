@@ -217,3 +217,54 @@ jobs:
             printf -- '- hosted artifact, editor startup and bundled circuit round trip: **%s**\n' "$smoke"
             printf -- '- Hosted job status before summary: **%s**\n' "$job"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Reporting must not consume the hosted gate's own job budget.
+  release-evidence:
+    name: Retain release identity evidence (best effort)
+    needs: [verify, deploy, hosted-smoke]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.verify.result == 'success' && needs.deploy.result == 'success' && needs['hosted-smoke'].result == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions: {}
+    timeout-minutes: 4
+    continue-on-error: true
+    steps:
+      - name: Write release identity receipt
+        id: release_receipt
+        timeout-minutes: 1
+        shell: bash
+        env:
+          VERIFIED_SOURCE_SHA: ${{ needs.verify.outputs.source_sha }}
+          VERIFIED_MANIFEST_SHA: ${{ needs.verify.outputs.manifest_sha }}
+        run: |
+          [[ ${GITHUB_REPOSITORY,,} == xuaps/independent-circuit-editor ]]
+          [[ ${GITHUB_WORKFLOW_REF,,} == xuaps/independent-circuit-editor/.github/workflows/delivery.yml@refs/heads/main ]]
+          [[ $GITHUB_EVENT_NAME == push && $GITHUB_REF == refs/heads/main ]]
+          [[ $VERIFIED_SOURCE_SHA =~ ^[0-9a-f]{40}$ && $VERIFIED_SOURCE_SHA == "$GITHUB_SHA" ]]
+          [[ $VERIFIED_MANIFEST_SHA =~ ^[0-9a-f]{64}$ ]]
+          [[ $GITHUB_RUN_ID =~ ^[1-9][0-9]{0,14}$ && $GITHUB_RUN_ATTEMPT =~ ^[1-9][0-9]{0,5}$ ]]
+          umask 077
+          receipt="$RUNNER_TEMP/release-receipt.json"
+          ( set -o noclobber; printf '{"schema":1,"repo":"Xuaps/independent-circuit-editor","workflow":".github/workflows/delivery.yml","ref":"refs/heads/main","event":"push","runId":%s,"runAttempt":%s,"sourceSha":"%s","manifestSha":"%s","gates":{"verify":"success","deploy":"success","hostedSmoke":"success"}}\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$VERIFIED_SOURCE_SHA" "$VERIFIED_MANIFEST_SHA" > "$receipt" )
+          sha=$(sha256sum "$receipt" | cut -d' ' -f1)
+          printf 'sha256=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release identity receipt
+        id: release_receipt_upload
+        timeout-minutes: 1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-identity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Summarize retained release identity
+        if: steps.release_receipt_upload.outcome == 'success'
+        timeout-minutes: 1
+        shell: bash
+        env:
+          RELEASE_RECEIPT_SHA: ${{ steps.release_receipt.outputs.sha256 }}
+        run: |
+          [[ $RELEASE_RECEIPT_SHA =~ ^[0-9a-f]{64}$ ]]
+          printf '### Release identity evidence\n\n- Raw receipt SHA-256: `%s`\n' "$RELEASE_RECEIPT_SHA" >> "$GITHUB_STEP_SUMMARY"

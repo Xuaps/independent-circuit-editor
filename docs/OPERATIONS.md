@@ -19,6 +19,8 @@ All Pages-capable runs share one concurrency group from verification through hos
 
 ## Rollback
 
+After a successful automatic `main` delivery and hosted smoke, a separate, time-limited Actions job attempts to retain a small `release-identity-<run>-<attempt>` JSON receipt without changing the hosted-smoke result. A successfully uploaded receipt is configured for seven-day retention; after upload, the evidence job attempts to report its raw SHA-256 in the run summary. The receipt binds the verified source and raw build-manifest digests to that successful run and attempt; it does not contain the deployed files or authorize a rollback. A missing, expired, or mismatched receipt is not evidence of known-good bytes.
+
 Use **Actions → CI and Pages delivery → Run workflow** on the default branch:
 
 1. Enter a previously successful exact 40-hex Git commit SHA in `target_ref`.
