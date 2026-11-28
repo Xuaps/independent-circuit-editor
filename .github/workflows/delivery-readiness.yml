@@ -1,0 +1,131 @@
+name: Delivery readiness signal
+
+on:
+  workflow_run:
+    workflows: [CI and Pages delivery]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  readiness:
+    name: Report exact delivery readiness
+    if: ${{ github.repository == 'Xuaps/independent-circuit-editor' && github.event.workflow_run.workflow_id == 432169852 && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.id == 1473755063 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Check completed delivery event
+        env:
+          READ_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          from urllib.error import URLError
+          from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+          REPO = 'Xuaps/independent-circuit-editor'
+          REPO_ID = 1473755063
+          DELIVERY_WORKFLOW = 432169852
+          REQUIRED = ('Verify exact source and build', 'Deploy verified Pages artifact',
+                      'Smoke-test deployed site')
+
+          class Blocked(Exception):
+              pass
+
+          class NoRedirect(HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def require(condition, reason):
+              if not condition:
+                  raise Blocked(reason)
+
+          def identity(run):
+              repo = run['head_repository']
+              require(type(repo['id']) is int and repo['id'] == REPO_ID
+                      and repo['full_name'] == REPO, 'untrusted-source-repository')
+              require(run['workflow_id'] == DELIVERY_WORKFLOW
+                      and run['path'] == '.github/workflows/delivery.yml'
+                      and run['event'] == 'push' and run['head_branch'] == 'main', 'untrusted-delivery-context')
+              run_id, attempt, sha = run['id'], run['run_attempt'], run['head_sha']
+              require(type(run_id) is int and run_id > 0 and type(attempt) is int and attempt > 0
+                      and type(sha) is str and re.fullmatch(r'[0-9a-f]{40}', sha), 'invalid-delivery-identity')
+              return run_id, attempt, sha
+
+          def decide(event, fetch):
+              require(event['action'] == 'completed' and event['repository']['id'] == REPO_ID,
+                      'untrusted-event-context')
+              run = event['workflow_run']
+              key = identity(run)
+              run_id, attempt, sha = key
+              current = fetch(f'actions/runs/{run_id}')
+              current_key = identity(current)
+              require((current_key[0], current_key[2]) == (run_id, sha), 'mismatched-run')
+              if current_key != key:
+                  return 'STALE', 'superseded-run-attempt', key
+              require(run['status'] == current['status'] == 'completed'
+                      and run['conclusion'] == current['conclusion'], 'unconfirmed-run-result')
+
+              green = current['conclusion'] == 'success'
+              if green:
+                  report = fetch(f'actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100')
+                  jobs = report['jobs']
+                  require(type(jobs) is list and report['total_count'] == len(jobs) <= 100,
+                          'incomplete-job-evidence')
+                  for expected in REQUIRED:
+                      matches = [j for j in jobs if j.get('name') == expected]
+                      if len(matches) != 1 or (matches[0].get('status'), matches[0].get('conclusion')) != ('completed', 'success'):
+                          green = False
+                          break
+
+              # Compare current protected main last; never use this subscriber run's GITHUB_SHA.
+              main = fetch('branches/main')
+              require(main['name'] == 'main' and main['protected'] is True, 'unconfirmed-main-protection')
+              main_sha = main['commit']['sha']
+              require(type(main_sha) is str and re.fullmatch(r'[0-9a-f]{40}', main_sha), 'invalid-main-identity')
+              if main_sha != sha:
+                  return 'STALE', 'superseded-main', key
+              if not green:
+                  return 'HOLD', 'delivery-gates-not-green', key
+              return 'READY', 'exact-main-gates-green', key
+
+          def read_api(route):
+              request = Request(f'https://api.github.com/repos/{REPO}/{route}', headers={
+                  'Authorization': 'Bearer ' + os.environ['READ_TOKEN'],
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+              })
+              with build_opener(NoRedirect).open(request, timeout=12) as response:
+                  body = response.read(1024 * 1024 + 1)
+              require(len(body) <= 1024 * 1024, 'metadata-too-large')
+              return json.loads(body)
+
+          def publish(decision, reason, key):
+              lines = ['### Delivery readiness signal', '', f'**{decision}** — `{reason}`']
+              if key:
+                  run_id, attempt, sha = key
+                  lines += [f'- Exact source: `{sha}`',
+                            f'- [Delivery run {run_id}](https://github.com/{REPO}/actions/runs/{run_id}), attempt {attempt}']
+              lines += ['', 'Point-in-time signal only; does not enqueue, merge, deploy, or replace required checks.']
+              with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+                  summary.write('\n'.join(lines) + '\n')
+
+          def main():
+              try:
+                  event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_bytes())
+                  result = decide(event, read_api)
+              except Blocked as error:
+                  result = ('HOLD', str(error), None)
+              except (URLError, OSError, ValueError, KeyError, TypeError, AttributeError):
+                  result = ('HOLD', 'metadata-unavailable', None)
+              publish(*result)
+
+          if __name__ == '__main__':
+              main()
+          PY

@@ -32,3 +32,9 @@ A rollback is still a deployment and requires the owner's applicable release aut
 ## Cost and platform boundary
 
 The intended target is the free GitHub Pages deployment for the organization repository `Xuaps/independent-circuit-editor` at the custom root origin `https://circuits.xuaps.com/`. During migration, `https://dvilchez.github.io/` remains an independent legacy deployment; the new deployment does not automatically redirect or retire it. The workflow does not subscribe to external hosting, paid Actions runners, or paid services. Repository administrators must keep billing and spending limits disabled unless the owner explicitly changes that policy.
+
+## Delivery readiness event
+
+**Delivery readiness signal** listens for completion of the existing delivery workflow; it does not poll. It reports `READY` only when the exact completed automatic `main` attempt has successful Verify, Deploy, and hosted smoke and its SHA is still the protected `main` tip. `HOLD`, `STALE`, no summary, or no event is not a green signal. Read the decision and exact SHA in the Actions summary; the listener job's own success only means it reported a decision.
+
+This is a point-in-time coordination signal, not a new required check or an approval to merge or deploy. Topic worktrees can continue independently. The listener does not manipulate the merge queue, fetch deployed assets, notify an external receiver, or wake local agent sessions. Existing source review, Verify, native queue, and automatic Pages delivery remain unchanged.
