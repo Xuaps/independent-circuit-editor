@@ -1,6 +1,6 @@
 import { advanced, inspectProject, moreFiles, reveal } from './helpers/authoring';
 import { test, expect, type Page } from '@playwright/test';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -50,11 +50,22 @@ test('invalid/future/duplicate/oversized opens preserve design and undo history;
     [JSON.stringify({ ...before, formatVersion: 2 }), 'INVALID_SHAPE'],
     [' '.repeat(10485761), 'RESOURCE_LIMIT'],
   ] as const) {
-    await upload(page, text);
-    // Each failure differs from the preceding status: stale generic "failed" is not completion.
-    await expect(page.getByTestId('file-status')).toContainText(`File action canceled or failed: Error: ${code}`);
-    await filesIdle(page);
-    expect(await graph(page)).toEqual(before); await expect(page.getByRole('button', { name: 'Undo (1)', exact: true })).toBeEnabled();
+    const uploadDir = code === 'RESOURCE_LIMIT' ? await mkdtemp(join(tmpdir(), 'browser-oversized-upload-')) : undefined;
+    try {
+      if (uploadDir) {
+        const filePath = join(uploadDir, 'not-a-circuit.txt');
+        await writeFile(filePath, text);
+        await page.getByLabel('Open circuit file', { exact: true }).setInputFiles(filePath);
+      } else {
+        await upload(page, text);
+      }
+      // Each failure differs from the preceding status: stale generic "failed" is not completion.
+      await expect(page.getByTestId('file-status')).toContainText(`File action canceled or failed: Error: ${code}`);
+      await filesIdle(page);
+      expect(await graph(page)).toEqual(before); await expect(page.getByRole('button', { name: 'Undo (1)', exact: true })).toBeEnabled();
+    } finally {
+      if (uploadDir) await rm(uploadDir, { recursive: true, force: true });
+    }
   }
   const example = page.getByRole('button', { name: 'Load example', exact: true });
   await moreFiles(page); await chooseForAction(page, 'Cancel', () => example.click());
