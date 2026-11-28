@@ -1,0 +1,4 @@
+contact_links:
+  - name: Search or comment on an existing report
+    url: https://github.com/Xuaps/independent-circuit-editor/issues
+    about: Look for a matching issue and add new details in a comment instead of opening a duplicate. Comments are public. Do not share private circuits, personal information, or security details.
